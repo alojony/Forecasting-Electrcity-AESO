@@ -3,83 +3,6 @@ library(timeSeries)
 library(astsa)
 library(forecast)
 
-
-# -----Load and parse data-----
-
-load("aeso.RData")
-
-aeso <- timeSeries(aeso, aeso$DT_MST, format = "%Y-%m-%d")
-aeso <-
-  aeso[, c("DT_MST", "Northwest")] # Only keep required columns
-aeso <-
-  aeso[!is.na(aeso$Northwest),] # Remove entries for which hourly consumption is missing
-
-# ---- Correct for Missing Values ----
-NAtoNeighborAverage <- function(x) {
-  n <- length(x)
-  if (n <= 2) return("not enough data to interpolate") 
-  
-  for (i in 2:(n-1)) {
-    if (is.na(x[i])) {
-      prev_val <- x[i-1]
-      next_val <- x[i+1]
-      
-      # If both neighbors are not NaN, calculate the average; otherwise, use the non-NaN neighbor.
-      if (!is.na(prev_val) && !is.na(next_val)) {
-        x[i] <- mean(c(prev_val, next_val))
-      } else if (!is.na(prev_val)) {
-        x[i] <- prev_val
-      } else if (!is.na(next_val)) {
-        x[i] <- next_val
-      }
-      # Note: If both neighbors are NaN, this doesn't change the current NaN value.
-    }
-  }
-  
-  # Handle first and last elements if they are NaN, by simple forward or backward fill
-  if (is.na(x[1])) x[1] <- x[min(which(!is.na(x)))] # Forward fill
-  if (is.na(x[n])) x[n] <- x[max(which(!is.na(x)))] # Backward fill
-  
-  return("Interpolated")
-}
-
-
-
-# -----  Aggregate daily peak load ----
-
-# Get daily peak hourly load
-everyDay <-
-  timeSequence(
-    from = min(aeso$DT_MST),
-    to = max(aeso$DT_MST),
-    by = "day"
-  )
-full_set <- aggregate(aeso, everyDay, max)
-
-# Convert columns to appropriate types
-full_set <-
-  transform(full_set,
-            DT_MST = as.Date(DT_MST),
-            Northwest = as.numeric(Northwest))
-
-
-# ---- Add Dummy Variables ----
-
-holiday_dates <- read.csv("holidays.csv", colClasses=c("Date"))$Date
-full_set$IsHoliday <- ifelse(full_set$DT_MST %in% holiday_dates, 1, 0)
-
-full_set$Weekday <- weekdays(full_set$DT_MST)
-full_set$IsWeekend <- ifelse(full_set$Weekday %in% c("Saturday", "Sunday"), 1, 0)
-
-full_set$season <-
-  cut(
-    as.POSIXlt(full_set$DT_MST)$mon,
-    breaks = c(0, 2, 5, 8, 12),
-    labels = c("Winter", "Spring", "Summer", "Autumn"),
-    right = FALSE
-  )
-
-
 # ----- Compute naïve forecasts ----
 
 full_set$naive_forecast <- c(NA, head(full_set$Northwest, -1))
@@ -100,7 +23,7 @@ full_set$rollmean_forecast <- c(NA, head(rollmean_forecast,-1))
 
 
 
-# ----- Define training, validation and test sets ----
+# ----- Item 5 - Define training, validation and test sets ----
 
 # Define the cutoff dates for splitting the data
 training_end <- as.Date("2015-12-31")
@@ -111,7 +34,69 @@ training_set <- subset(full_set, DT_MST <= training_end)
 test_set <- subset(full_set, DT_MST > validation_end)
 
 
-# ----- Collect accuracy measures for forecasts ----
+# ----- Smoothing Methods ----
+
+# Simple Exponential Smoothing
+
+# Find optimal value for hyperparameter alpha (using training set)
+optimal_alpha <- ses(training_set$Northwest, h = 1)$model$par[[1]]
+full_set$ses_forecast <- NA # Initialize forecast column
+
+# Make prediction for each t with data until t-1
+for (t in 2:nrow(full_set)) {
+  ses_model <-
+    ses(full_set[1:(t - 1), "Northwest"], h = 1, alpha = optimal_alpha)
+  full_set$ses_forecast[t] <- ses_model$mean[1]
+}
+
+
+# 2-parameters Holt Method
+optimal_params <- holt(training_set$Northwest, h = 1)$model$par
+optimal_alpha <- optimal_params[[1]]
+optimal_beta <- optimal_params[[2]]
+
+full_set$holt_forecast <- NA # Initialize forecast column
+
+# Make prediction for each t with data until t-1
+for (t in 3:nrow(full_set)) {
+  holt_model <-
+    holt(full_set[1:(t - 1), "Northwest"],
+         h = 1,
+         alpha = optimal_alpha,
+         beta = optimal_beta)
+  full_set$holt_forecast[t] <- holt_model$mean[1]
+}
+
+# Holt-Winters 7-day seasonality
+optimal_model <-
+  hw(ts(training_set$Northwest, frequency = 7), h = 1)$model
+
+full_set$holt_winters_forecast <- NA # Initialize forecast column
+
+# Make prediction for each t with data until t-1
+for (t in 11:nrow(full_set)) {
+  holt_winters_model <-
+    hw(ts(full_set[1:(t - 1), "Northwest"], frequency = 7),
+       h = 1,
+       model = optimal_model)
+  full_set$holt_winters_forecast[t] <- holt_winters_model$mean[1]
+}
+
+
+# BATS
+optimal_model <- bats(training_set$Northwest)
+
+full_set$bats_forecast <- NA
+
+for (t in 1:nrow(full_set)) {
+  bats_model <-
+    bats(full_set[1:(t - 1), "Northwest"], model = optimal_model)
+  full_set$bats_forecast[t] <- forecast(bats, h = 10)
+}
+
+plot(forecast(optimal_model)$mean)
+
+# ----- Item 6 - Collect seasonal accuracy measures for forecasts ----
 
 mape <- function(forecast, observed) {
   return (mean(abs((

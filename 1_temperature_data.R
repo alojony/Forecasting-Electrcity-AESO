@@ -1,3 +1,5 @@
+library(timeSeries)
+
 # Temperature Data extracted from https://acis.alberta.ca/acis/township-data-viewer.jsp
 # Took the 9 main townships that AESO designates as the Northwestern area of Alberta
 
