@@ -83,15 +83,16 @@ for (t in 11:nrow(full_set)) {
 }
 
 
-# BATS
-optimal_model <- bats(training_set$Northwest)
+# TBATS
+optimal_model <- tbats(ts(training_set$Northwest, frequency=7))
 
-full_set$bats_forecast <- NA
+full_set$tbats_forecast <- NA
 
 for (t in 1:nrow(full_set)) {
-  bats_model <-
-    bats(full_set[1:(t - 1), "Northwest"], model = optimal_model)
-  full_set$bats_forecast[t] <- forecast(bats, h = 10)
+  tbats_model <-
+    tbats(ts(full_set[1:(t - 1), "Northwest"], frequency = 7), model = optimal_model)
+  
+  full_set$tbats_forecast[t] <- forecast(tbats_model, h = 1)$mean
 }
 
 plot(forecast(optimal_model)$mean)
@@ -102,9 +103,6 @@ mape <- function(forecast, observed) {
   return (mean(abs((
     observed - forecast
   ) / observed)) * 100)
-}
-evaluate <- function(dataset, forecast_col_name, observed_col_name="Northwest") {
-  return(mape(dataset[, forecast_col_name], dataset[, observed_col_name]))
 }
   
 validation_set <-
