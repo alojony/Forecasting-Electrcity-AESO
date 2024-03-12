@@ -67,7 +67,7 @@ yearly_summary$Alberta_Population <- Alberta_Population
 
 #Aggregate aeso data by year for Northwest and Total consumption
 yearly_consumption <- 
-  aggregate(cbind(Northwest, Total) ~ Year, data = aeso, FUN = sum)
+  aggregate(cbind(Northwest, Total) ~ Year, data = full_set, FUN = sum)
 
 #Merge yearly_consumption with Northwest_Population
 yearly_summary <- merge(yearly_summary, 
