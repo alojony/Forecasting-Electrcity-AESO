@@ -5,11 +5,11 @@ library(forecast)
 
 # ----- Compute naïve forecasts ----
 
-full_set$naive_forecast <- c(NA, head(full_set$Northwest, -1))
+full_set$naive_forecast <- c(NA, head(full_set$Northwest,-1))
 full_set$seasonal_forecast_7d <-
-  c(rep(NA, 7), head(full_set$Northwest, -7))
+  c(rep(NA, 7), head(full_set$Northwest,-7))
 full_set$seasonal_forecast_30d <-
-  c(rep(NA, 30), head(full_set$Northwest, -30))
+  c(rep(NA, 30), head(full_set$Northwest,-30))
 
 # We offset the rolling mean forecast by an additional period,
 # since the rollmean function outputs the forecast for t+1 at position t,
@@ -19,7 +19,7 @@ rollmean_forecast <-
                 k = 3,
                 fill = NA,
                 align = "right")
-full_set$rollmean_forecast <- c(NA, head(rollmean_forecast,-1))
+full_set$rollmean_forecast <- c(NA, head(rollmean_forecast, -1))
 
 
 
@@ -81,32 +81,32 @@ for (t in 3:nrow(full_set)) {
 optimal_model <-
   hw(ts(training_set$Northwest, frequency = 7), h = 1)$model
 
-full_set$holt_winters_forecast <- NA # Initialize forecast column
-full_set$holt_winters_high_80 <- NA
-full_set$holt_winters_low_80 <- NA
-full_set$holt_winters_high_95 <- NA
-full_set$holt_winters_low_95 <- NA
+full_set$hw_forecast <- NA # Initialize forecast column
+full_set$hw_high_80 <- NA
+full_set$hw_low_80 <- NA
+full_set$hw_high_95 <- NA
+full_set$hw_low_95 <- NA
 
 
 # Make prediction for each t with data until t-1
 for (t in 11:nrow(full_set)) {
-  holt_winters_model <-
+  hw_model <-
     hw(ts(full_set[1:(t - 1), "Northwest"], frequency = 7),
        h = 1,
        model = optimal_model)
   
-  full_set$holt_winters_forecast[t] <- holt_winters_model$mean[1]
-  full_set$holt_winters_high_80[t] <- holt_winters_model$upper[1]
-  full_set$holt_winters_low_80[t] <- holt_winters_model$lower[1]
-  full_set$holt_winters_high_95[t] <- holt_winters_model$upper[2]
-  full_set$holt_winters_low_95[t] <- holt_winters_model$lower[2]
+  full_set$hw_forecast[t] <- hw_model$mean[1]
+  full_set$hw_high_80[t] <- hw_model$upper[1]
+  full_set$hw_low_80[t] <- hw_model$lower[1]
+  full_set$hw_high_95[t] <- hw_model$upper[2]
+  full_set$hw_low_95[t] <- hw_model$lower[2]
 }
 
 
 # TBATS
-optimal_model <- tbats(ts(training_set$Northwest, frequency=7))
+optimal_model <- tbats(ts(training_set$Northwest, frequency = 7))
 
-full_set$tbats_point_forecast <- NA
+full_set$tbats_forecast <- NA
 full_set$tbats_low_80 <- NA
 full_set$tbats_high_80 <- NA
 full_set$tbats_low_95 <- NA
@@ -116,7 +116,8 @@ for (t in 1:nrow(full_set)) {
   tbats_model <-
     tbats(ts(full_set[1:(t - 1), "Northwest"], frequency = 7), model = optimal_model)
   
-  full_set$tbats_point_forecast[t] <- forecast(tbats_model, h = 1)$mean
+  full_set$tbats_forecast[t] <-
+    forecast(tbats_model, h = 1)$mean
   full_set$tbats_low_80[t] <- forecast(tbats_model, h = 1)$lower[1]
   full_set$tbats_high_80[t] <- forecast(tbats_model, h = 1)$upper[1]
   full_set$tbats_low_95[t] <- forecast(tbats_model, h = 1)$lower[2]
@@ -134,11 +135,15 @@ mape <- function(forecast, observed) {
 }
 
 pct_bias <- function(forecast, observed) {
-  return (
-    mean((forecast - observed) / observed) * 100
-  )
+  return (mean((forecast - observed) / observed) * 100)
 }
-  
+
+pct_interval_coverage <- function(low_bound, high_bound, observed) {
+  return (mean(ifelse(
+    low_bound <= observed & observed <= high_bound, 1, 0
+  )))
+}
+
 validation_set <-
   subset(full_set, DT_MST > training_end & DT_MST <= validation_end)
 
@@ -165,11 +170,47 @@ for (s in unique(full_set$season)) {
   accuracy_measures[["simple exponential smoothing"]][[s]] <-
     mape(seasonal_subset$ses_forecast, seasonal_subset$Northwest)
   
-  accuracy_measures[["holt"]][[s]] <-
-    mape(seasonal_subset$holt_forecast, seasonal_subset$Northwest)
+  accuracy_measures[["holt"]][[s]] <- list(
+    mape = mape(seasonal_subset$holt_forecast, seasonal_subset$Northwest),
+    coverage_80 = pct_interval_coverage(
+      seasonal_subset$holt_low_80,
+      seasonal_subset$holt_high_80,
+      seasonal_subset$Northwest
+    ),
+    coverage_95 = pct_interval_coverage(
+      seasonal_subset$holt_low_95,
+      seasonal_subset$holt_high_95,
+      seasonal_subset$Northwest
+    )
+  )
   
-  accuracy_measures[["holt-winters"]][[s]] <-
-    mape(seasonal_subset$ses_forecast, seasonal_subset$Northwest)
+  accuracy_measures[["holt-winters"]][[s]] <- list(
+    mape = mape(seasonal_subset$hw_forecast, seasonal_subset$Northwest),
+    coverage_80 = pct_interval_coverage(
+      seasonal_subset$hw_low_80,
+      seasonal_subset$hw_high_80,
+      seasonal_subset$Northwest
+    ),
+    coverage_95 = pct_interval_coverage(
+      seasonal_subset$hw_low_95,
+      seasonal_subset$hw_high_95,
+      seasonal_subset$Northwest
+    )
+  )
+  
+  accuracy_measures[["TBATS"]][[s]] <- list(
+    mape = mape(seasonal_subset$tbats_forecast, seasonal_subset$Northwest),
+    coverage_80 = pct_interval_coverage(
+      seasonal_subset$tbats_low_80,
+      seasonal_subset$tbats_high_80,
+      seasonal_subset$Northwest
+    ),
+    coverage_95 = pct_interval_coverage(
+      seasonal_subset$tbats_low_95,
+      seasonal_subset$tbats_high_95,
+      seasonal_subset$Northwest
+    )
+  )
 }
 
 
