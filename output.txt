@@ -1,0 +1,98 @@
+$naive
+$naive$Winter
+[1] 1.937398
+
+$naive$Spring
+[1] 1.74235
+
+$naive$Summer
+[1] 2.323299
+
+$naive$Autumn
+[1] 2.05941
+
+
+$`7d naive`
+$`7d naive`$Winter
+[1] 2.971996
+
+$`7d naive`$Spring
+[1] 2.803743
+
+$`7d naive`$Summer
+[1] 3.012676
+
+$`7d naive`$Autumn
+[1] 2.833647
+
+
+$`30d naive`
+$`30d naive`$Winter
+[1] 2.843224
+
+$`30d naive`$Spring
+[1] 5.094982
+
+$`30d naive`$Summer
+[1] 4.421414
+
+$`30d naive`$Autumn
+[1] 4.83243
+
+
+$rollmean
+$rollmean$Winter
+[1] 1.951872
+
+$rollmean$Spring
+[1] 1.902874
+
+$rollmean$Summer
+[1] 2.239337
+
+$rollmean$Autumn
+[1] 2.09339
+
+
+$`simple exponential smoothing`
+$`simple exponential smoothing`$Winter
+[1] 1.820514
+
+$`simple exponential smoothing`$Spring
+[1] 1.763532
+
+$`simple exponential smoothing`$Summer
+[1] 2.140907
+
+$`simple exponential smoothing`$Autumn
+[1] 1.970733
+
+
+$holt
+$holt$Winter
+[1] 1.820834
+
+$holt$Spring
+[1] 1.764219
+
+$holt$Summer
+[1] 2.141239
+
+$holt$Autumn
+[1] 1.970886
+
+
+$`holt-winters`
+$`holt-winters`$Winter
+[1] 1.820514
+
+$`holt-winters`$Spring
+[1] 1.763532
+
+$`holt-winters`$Summer
+[1] 2.140907
+
+$`holt-winters`$Autumn
+[1] 1.970733
+
+

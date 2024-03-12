@@ -126,6 +126,48 @@ for (t in 1:nrow(full_set)) {
 
 plot(forecast(optimal_model)$mean)
 
+
+# TBATS fitted every 2 weeks
+
+# Tbats refitted every two weeks
+
+optimal_model <- tbats(ts(training_set$Northwest, frequency=7))
+
+# Initialize the columns for storing forecasts and intervals
+full_set$tbats_point_forecast <- NA
+full_set$tbats_low_80 <- NA
+full_set$tbats_high_80 <- NA
+full_set$tbats_low_95 <- NA
+full_set$tbats_high_95 <- NA
+
+# Set the initial last refit time
+last_refit_time <- 0
+
+for (t in 1:nrow(full_set)) {
+  # Check if two weeks have passed since the last refit
+  if ((t - last_refit_time) >= 14) {
+    # Refit the model using data up to the current point
+    optimal_model <- tbats(ts(full_set[1:t, "Northwest"], frequency = 7))
+    last_refit_time <- t  # Update the last refit time
+  }
+  
+  # Generate the forecast using the current model
+  forecast_result <- forecast(optimal_model, h = 1)
+  
+  # Store the forecast and confidence intervals in the full set
+  full_set$tbats_point_forecast[t] <- forecast_result$mean
+  full_set$tbats_low_80[t] <- forecast_result$lower[1]
+  full_set$tbats_high_80[t] <- forecast_result$upper[1]
+  full_set$tbats_low_95[t] <- forecast_result$lower[2]
+  full_set$tbats_high_95[t] <- forecast_result$upper[2]
+}
+
+# Print the updated full_set with forecasts
+print(full_set)
+
+plot(full_set$DT_MST, full_set$tbats_high_95,type='l')
+
+
 # ----- Item 6 - Collect seasonal accuracy measures for forecasts ----
 
 mape <- function(forecast, observed) {
