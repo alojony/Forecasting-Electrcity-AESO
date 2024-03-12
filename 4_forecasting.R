@@ -56,6 +56,11 @@ optimal_alpha <- optimal_params[[1]]
 optimal_beta <- optimal_params[[2]]
 
 full_set$holt_forecast <- NA # Initialize forecast column
+full_set$holt_low_80 <- NA
+full_set$holt_high_80 <- NA
+full_set$holt_low_95 <- NA
+full_set$holt_high_95 <- NA
+
 
 # Make prediction for each t with data until t-1
 for (t in 3:nrow(full_set)) {
@@ -64,7 +69,12 @@ for (t in 3:nrow(full_set)) {
          h = 1,
          alpha = optimal_alpha,
          beta = optimal_beta)
+  
   full_set$holt_forecast[t] <- holt_model$mean[1]
+  full_set$holt_low_80[t] <- holt_model$lower[1]
+  full_set$holt_high_80[t] <- holt_model$upper[1]
+  full_set$holt_low_95[t] <- holt_model$lower[2]
+  full_set$holt_high_95[t] <- holt_model$upper[2]
 }
 
 # Holt-Winters 7-day seasonality
@@ -72,6 +82,11 @@ optimal_model <-
   hw(ts(training_set$Northwest, frequency = 7), h = 1)$model
 
 full_set$holt_winters_forecast <- NA # Initialize forecast column
+full_set$holt_winters_high_80 <- NA
+full_set$holt_winters_low_80 <- NA
+full_set$holt_winters_high_95 <- NA
+full_set$holt_winters_low_95 <- NA
+
 
 # Make prediction for each t with data until t-1
 for (t in 11:nrow(full_set)) {
@@ -79,20 +94,33 @@ for (t in 11:nrow(full_set)) {
     hw(ts(full_set[1:(t - 1), "Northwest"], frequency = 7),
        h = 1,
        model = optimal_model)
+  
   full_set$holt_winters_forecast[t] <- holt_winters_model$mean[1]
+  full_set$holt_winters_high_80[t] <- holt_winters_model$upper[1]
+  full_set$holt_winters_low_80[t] <- holt_winters_model$lower[1]
+  full_set$holt_winters_high_95[t] <- holt_winters_model$upper[2]
+  full_set$holt_winters_low_95[t] <- holt_winters_model$lower[2]
 }
 
 
 # TBATS
 optimal_model <- tbats(ts(training_set$Northwest, frequency=7))
 
-full_set$tbats_forecast <- NA
+full_set$tbats_point_forecast <- NA
+full_set$tbats_low_80 <- NA
+full_set$tbats_high_80 <- NA
+full_set$tbats_low_95 <- NA
+full_set$tbats_high_95 <- NA
 
 for (t in 1:nrow(full_set)) {
   tbats_model <-
     tbats(ts(full_set[1:(t - 1), "Northwest"], frequency = 7), model = optimal_model)
   
-  full_set$tbats_forecast[t] <- forecast(tbats_model, h = 1)$mean
+  full_set$tbats_point_forecast[t] <- forecast(tbats_model, h = 1)$mean
+  full_set$tbats_low_80[t] <- forecast(tbats_model, h = 1)$lower[1]
+  full_set$tbats_high_80[t] <- forecast(tbats_model, h = 1)$upper[1]
+  full_set$tbats_low_95[t] <- forecast(tbats_model, h = 1)$lower[2]
+  full_set$tbats_high_95[t] <- forecast(tbats_model, h = 1)$upper[2]
 }
 
 plot(forecast(optimal_model)$mean)
@@ -103,6 +131,12 @@ mape <- function(forecast, observed) {
   return (mean(abs((
     observed - forecast
   ) / observed)) * 100)
+}
+
+pct_bias <- function(forecast, observed) {
+  return (
+    mean((forecast - observed) / observed) * 100
+  )
 }
   
 validation_set <-
