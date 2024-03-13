@@ -54,19 +54,24 @@ unique(na_rows$Township)  #why?
 temperature$Date <- as.Date(temperature$Date)
 
 # Calculate the average temperature for each day
-temperature.daily_avg <- aggregate(cbind(Temp.Min, Temp.Max) ~ Date, data = temperature, FUN = mean, na.rm = TRUE)
+temperature.daily_avg <- aggregate(cbind(Temp.Min, Temp.Max) ~ Date, 
+                                   data = temperature, FUN = mean, na.rm = TRUE)
 
 # Rename the columns for the new dataset
 colnames(temperature.daily_avg) <- c("Date", "Temp.Min", "Temp.Max")
 
 # Calculate the average temperature for each date
-temperature.daily_avg$Temp.Avg <- (temperature.daily_avg$Temp.Min + temperature.daily_avg$Temp.Max) / 2
+temperature.daily_avg$Temp.Avg <- (temperature.daily_avg$Temp.Min + 
+                                     temperature.daily_avg$Temp.Max) / 2
 # Display the updated data frame to verify the new column
 
 # Make a Daily Temperature Average (dta), CDD and HDD dataset
-dta <- timeSeries(temperature.daily_avg$Temp.Avg, temperature.daily_avg$Date, format="%Y_%m-%d")
-cdd <- timeSeries(temperature.daily_avg$Temp.Min, temperature.daily_avg$Date, format="%Y-%m-%d")
-hdd <- timeSeries(temperature.daily_avg$Temp.Max, temperature.daily_avg$Date, format="%Y-%m-%d")
+dta <- timeSeries(temperature.daily_avg$Temp.Avg, 
+                  temperature.daily_avg$Date, format="%Y_%m-%d")
+cdd <- timeSeries(temperature.daily_avg$Temp.Min, 
+                  temperature.daily_avg$Date, format="%Y-%m-%d")
+hdd <- timeSeries(temperature.daily_avg$Temp.Max, 
+                  temperature.daily_avg$Date, format="%Y-%m-%d")
 
 colnames(dta) <- c("temp")
 colnames(cdd) <- c("temp")

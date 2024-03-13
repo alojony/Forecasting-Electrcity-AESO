@@ -8,9 +8,9 @@ load("./data/aeso.RData")
 
 aeso <- timeSeries(aeso, aeso$DT_MST, format = "%Y-%m-%d")
 
+# Remove entries for which hourly consumption is missing
 aeso <-
-  aeso[!is.na(aeso$Northwest), ] # Remove entries for which hourly consumption is missing
-
+  aeso[!is.na(aeso$Northwest), ] 
 # ---- Correct for Missing Values ----
 NAtoNeighborAverage <- function(x) {
   n <- length(x)
@@ -22,7 +22,8 @@ NAtoNeighborAverage <- function(x) {
       prev_val <- x[i - 1]
       next_val <- x[i + 1]
       
-      # If both neighbors are not NaN, calculate the average; otherwise, use the non-NaN neighbor.
+      # If both neighbors are not NaN, 
+      #calculate the average; otherwise, use the non-NaN neighbor.
       if (!is.na(prev_val) && !is.na(next_val)) {
         x[i] <- mean(c(prev_val, next_val))
       } else if (!is.na(prev_val)) {
@@ -34,7 +35,8 @@ NAtoNeighborAverage <- function(x) {
     }
   }
   
-  # Handle first and last elements if they are NaN, by simple forward or backward fill
+  # Handle first and last elements if they are NaN, 
+  # by simple forward or backward fill
   if (is.na(x[1]))
     x[1] <- x[min(which(!is.na(x)))] # Forward fill
   if (is.na(x[n]))

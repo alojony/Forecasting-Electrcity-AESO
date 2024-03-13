@@ -124,21 +124,18 @@ for (t in 1:nrow(full_set)) {
   full_set$tbats_high_95[t] <- forecast(tbats_model, h = 1)$upper[2]
 }
 
-plot(forecast(optimal_model)$mean)
-
 
 # TBATS fitted every 2 weeks
 
-# Tbats refitted every two weeks
 
-optimal_model <- tbats(ts(training_set$Northwest, frequency=7))
+optimal_model_2 <- tbats(ts(training_set$Northwest, frequency=7))
 
 # Initialize the columns for storing forecasts and intervals
-full_set$tbats_point_forecast <- NA
-full_set$tbats_low_80 <- NA
-full_set$tbats_high_80 <- NA
-full_set$tbats_low_95 <- NA
-full_set$tbats_high_95 <- NA
+full_set$tbats_rf_point_forecast <- NA
+full_set$tbats_rf_low_80 <- NA
+full_set$tbats_rf_high_80 <- NA
+full_set$tbats_rf_low_95 <- NA
+full_set$tbats_rf_high_95 <- NA
 
 # Set the initial last refit time
 last_refit_time <- 0
@@ -152,20 +149,18 @@ for (t in 1:nrow(full_set)) {
   }
   
   # Generate the forecast using the current model
-  forecast_result <- forecast(optimal_model, h = 1)
+  forecast_rf_result <- forecast(optimal_model, h = 1)
   
   # Store the forecast and confidence intervals in the full set
-  full_set$tbats_point_forecast[t] <- forecast_result$mean
-  full_set$tbats_low_80[t] <- forecast_result$lower[1]
-  full_set$tbats_high_80[t] <- forecast_result$upper[1]
-  full_set$tbats_low_95[t] <- forecast_result$lower[2]
-  full_set$tbats_high_95[t] <- forecast_result$upper[2]
+  full_set$tbats_rf_point_forecast[t] <- forecast_rf_result$mean
+  full_set$tbats_rf_low_80[t] <- forecast_rf_result$lower[1]
+  full_set$tbats_rf_high_80[t] <- forecast_rf_result$upper[1]
+  full_set$tbats_rf_low_95[t] <- forecast_rf_result$lower[2]
+  full_set$tbats_rf_high_95[t] <- forecast_rf_result$upper[2]
 }
 
-# Print the updated full_set with forecasts
-print(full_set)
 
-plot(full_set$DT_MST, full_set$tbats_high_95,type='l')
+plot(full_set$DT_MST, full_set$tbats_rf_high_95,type='l')
 
 
 # ----- Item 6 - Collect seasonal accuracy measures for forecasts ----
@@ -265,6 +260,21 @@ for (s in unique(full_set$season)) {
     coverage_95 = pct_interval_coverage(
       seasonal_subset$tbats_low_95,
       seasonal_subset$tbats_high_95,
+      seasonal_subset$Northwest
+    )
+  )
+  
+  accuracy_measures[["TBATS_rf"]][[s]] <- list(
+    mape = mape(seasonal_subset$tbats_forecast, seasonal_subset$Northwest),
+    pct_bias = pct_bias(seasonal_subset$tbats_forecast, seasonal_subset$Northwest),
+    coverage_80 = pct_interval_coverage(
+      seasonal_subset$tbats_rf_low_80,
+      seasonal_subset$tbats_rf_high_80,
+      seasonal_subset$Northwest
+    ),
+    coverage_95 = pct_interval_coverage(
+      seasonal_subset$tbats_rf_low_95,
+      seasonal_subset$tbats_rf_high_95,
       seasonal_subset$Northwest
     )
   )
