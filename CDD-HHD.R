@@ -23,8 +23,7 @@ library(forecast)
 
 temperature <-
   read.csv(
-    "~/Documents/Obsidian Vault/HEC/Session 4 Winter 2024/
-    Forecasting/Project/AESO_NW/data/NW-AB_Temp.csv",
+    "./data/NW-AB_Temp.csv",
     sep = ",",
     header = TRUE
   )
@@ -111,7 +110,7 @@ temperature.daily_avg$Temp.Avg <-
 
 head(temperature.daily_avg)
 
-T_ref <- 18.00
+T_ref <- 12.00
 T_t <- temperature.daily_avg$Temp.Avg
 
 temp.cdd <- max(T_t - T_ref, 0)
@@ -136,8 +135,7 @@ lines(temperature.daily_avg$Date,
       col = 'blue')
 
 load(
-  "~/Documents/Obsidian Vault/HEC/Session 4 Winter 2024/
-  Forecasting/Project/AESO_NW/data/aeso.rdata"
+  "./data/aeso.RData"
 )
 
 # extract just the northwest
@@ -182,26 +180,80 @@ correlationMatrix <-
 # Print the correlation matrix
 print(correlationMatrix)
 
-# Basic scatter plot for Electricity Load vs HDD
-plot(
-  temperature.daily_avg$HDD,
-  temperature.daily_avg$load,
-  main = "Electricity Load vs HDD",
-  xlab = "Heating Degree Days (HDD)",
-  ylab = "Electricity Load",
-  pch = 19
-)
 
+# Create lag-1 for the HDD column
+temperature.daily_avg$lag_HDD <- c(NA, temperature.daily_avg$HDD[-nrow(temperature.daily_avg)])
 
-# Basic scatter plot for Electricity Load vs CDD
-plot(
-  temperature.daily_avg$CDD,
-  temperature.daily_avg$load,
-  main = "Electricity Load vs CDD",
-  xlab = "Cooling Degree Days (CDD)",
-  ylab = "Electricity Load",
-  pch = 19
-)
+# Create lag-1 for the CDD column
+temperature.daily_avg$lag_CDD <- c(NA, temperature.daily_avg$CDD[-nrow(temperature.daily_avg)])
+
+# Convert your data frame columns to time series if they aren't already
+HDD_ts <- ts(temperature.daily_avg$HDD)
+CDD_ts <- ts(temperature.daily_avg$CDD)
+
+# lag-2 for CDD 
+lag2_HDD_ts <- c(NA, NA, HDD_ts[-(length(HDD_ts)-1): -length(HDD_ts)])
+lag2_CDD_ts <- c(NA, NA, CDD_ts[-(length(CDD_ts)-1): -length(CDD_ts)])
+
+par(mfrow = c(3, 2))  
+plot(temperature.daily_avg$HDD,
+     temperature.daily_avg$load,
+     main = "Electricity Load vs HDD",
+     xlab = "Heating Degree Days (HDD)",
+     ylab = "Electricity Load",
+     col = 'red',
+     pch = 1)
+
+# Plot for Electricity Load vs CDD
+plot(temperature.daily_avg$CDD,
+     temperature.daily_avg$load,
+     main = "Electricity Load vs CDD",
+     xlab = "Cooling Degree Days (CDD)",
+     ylab = "Electricity Load",
+     col = 'blue',
+     pch = 1)
+
+# Plot for Electricity Load vs HDD
+plot(temperature.daily_avg$lag_HDD,
+     temperature.daily_avg$load,
+     main = "Electricity Load vs HDD lag 1",
+     xlab = "Heating Degree Days (lag-1 HDD)",
+     ylab = "Electricity Load",
+     col = 'red',
+     pch = 1)
+
+# Plot for Electricity Load vs CDD
+plot(temperature.daily_avg$lag_CDD,
+     temperature.daily_avg$load,
+     main = "Electricity Load vs CDD lag 1",
+     xlab = "Cooling Degree Days (lag-1 CDD)",
+     ylab = "Electricity Load",
+     col = 'blue',
+     pch = 1)
+# Plot for Electricity Load vs HDD
+plot(lag2_HDD_ts,
+     temperature.daily_avg$load,
+     main = "Electricity Load vs HDD lag 2",
+     xlab = "Heating Degree Days (lag-2 HDD)",
+     ylab = "Electricity Load",
+     col = 'red',
+     pch = 1)
+
+# Plot for Electricity Load vs CDD
+plot(lag2_CDD_ts,
+     temperature.daily_avg$load,
+     main = "Electricity Load vs CDD lag 2",
+     xlab = "Cooling Degree Days (lag-2 CDD)",
+     ylab = "Electricity Load",
+     col = 'blue',
+     pch = 1)
 
 
 summary(temperature.daily_avg)
+
+full_set$CDD <- temperature.daily_avg$CDD
+full_set$HDD <- temperature.daily_avg$HDD
+full_set$CDD_lag1 <- temperature.daily_avg$lag_CDD
+full_set$HDD_lag1 <- temperature.daily_avg$lag_HDD
+
+
