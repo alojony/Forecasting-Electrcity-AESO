@@ -47,7 +47,7 @@ reg_t <- cbind(training_set$IsHoliday,training_set$IsWeekend,
 
 # Fit the AR model on the training set
 ar_model <- 
-  auto.arima(Yt, xreg = reg_t, d = 0, max.p = 10, max.q = 0, seasonal = FALSE)
+  auto.arima(Yt, xreg = reg_t, d = 0, max.p = 20, max.q = 0, seasonal = FALSE)
 summary(ar_model)
 
 # Prepare the external regressors for the validation set
@@ -60,16 +60,19 @@ reg_v <- cbind(validation_set$IsHoliday,validation_set$IsWeekend,
                validation_set$Oct, validation_set$Nov, validation_set$Dec)
 
 
+pred_AR <- predict(ar_model, n.ahead=1, newxreg=reg_v)
+
+
 # Initialize a vector to store forecasts
 ar_forecasts <- numeric(nrow(validation_set))
 
 # Loop through the validation set to make one-step ahead forecasts
 for (i in 1:nrow(validation_set)) {
-  ar_forecasts[i] <- forecast(ar_model, n.ahead = 1, xreg = reg_v[i, ])$mean
+  ar_forecasts[i] <- predict(ar_model, n.ahead = 1, newxreg = reg_v[i, ])$mean
 }
 
 # Add the forecasts to the validation set for comparison
-validation_set$ar_forecast <- ar_forecasts
+validation_set$ar_forecast <-  ar_forecasts
 
 # Now you can plot the forecasts against the actual values
 plot(validation_set$Date, validation_set$Northwest, type = 'l', col = 'blue', ylab = 'Northwest', xlab = 'Date')
@@ -100,14 +103,8 @@ for (s in unique(full_set$season)) {
     mape =  mape(seasonal_subset$ar_forecast, seasonal_subset$Northwest),
     pct_bias = pct_bias(seasonal_subset$ar_forecast, seasonal_subset$Northwest)
     
-    
-    
   )
 }
-
-
-
-  
   for (s in unique(full_set$season)) {
     seasonal_measures <- accuracy_measures[["AR"]][[s]]
     print(cat("Season:", s, "\n"))
