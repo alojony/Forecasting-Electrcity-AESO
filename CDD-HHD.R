@@ -1,19 +1,3 @@
-# -----Project Info---------
-#  Temperature and Load   #
-#  Exploratory Analysis   #
-#   Jonathan A. Gonzalez  #
-#      2024-02-08         #
-# _______________________ #
-
-## Get humidity, precipitation, sunlight
-## Outliers
-### Naive?
-### Exp Smoothing
-###
-
-
-
-
 # Locale to ENG
 Sys.setlocale("LC_TIME", "C")
 # Load Libraries
@@ -180,6 +164,7 @@ correlationMatrix <-
 # Print the correlation matrix
 print(correlationMatrix)
 
+lag1.plot(temperature.daily_avg$HDD, max.lag = 2)
 
 # Create lag-1 for the HDD column
 temperature.daily_avg$lag_HDD <- c(NA, temperature.daily_avg$HDD[-nrow(temperature.daily_avg)])

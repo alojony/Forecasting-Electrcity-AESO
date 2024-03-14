@@ -66,13 +66,15 @@ temperature.daily_avg$Temp.Avg <- (temperature.daily_avg$Temp.Min +
 # Display the updated data frame to verify the new column
 
 # Make a Daily Temperature Average (dta), CDD and HDD dataset
-dta <- timeSeries(temperature.daily_avg$Temp.Avg, 
-                  temperature.daily_avg$Date, format="%Y_%m-%d")
-cdd <- timeSeries(temperature.daily_avg$Temp.Min, 
+avg_temp <- timeSeries(temperature.daily_avg$Temp.Avg, 
                   temperature.daily_avg$Date, format="%Y-%m-%d")
-hdd <- timeSeries(temperature.daily_avg$Temp.Max, 
+min_temp <- timeSeries(temperature.daily_avg$Temp.Min, 
                   temperature.daily_avg$Date, format="%Y-%m-%d")
+max_temp <- timeSeries(temperature.daily_avg$Temp.Max, 
+                  temperature.daily_avg$Date, format="%Y-%m-%d")
+head(avg_temp)
 
-colnames(dta) <- c("temp")
-colnames(cdd) <- c("temp")
-colnames(hdd) <- c("temp")
+full_set$avg_temperature <- avg_temp$TS.1
+full_set$min_temperature <- min_temp$TS.1
+full_set$max_temperature <- max_temp$TS.1
+
