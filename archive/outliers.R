@@ -9,7 +9,6 @@ ts_data <- ts(aeso.nw$Northwest, start = c(2011, 1), frequency = 8760)
 original_data <- ts_data
 
 # Detecting outliers
-
 outliers_indices <- which(abs(ts_data - mean(ts_data, na.rm = TRUE)) > 3*sd(ts_data, na.rm = TRUE))
 
 # Replacing outliers with median
@@ -50,6 +49,7 @@ par(mfrow = c(2, 1))
 plot(original_data, xlab="Time", ylab="Value", main="Cleaned Northwest Time Series after Removing Outliers")
 plot(seasonal_ts_data ,pch=4)
 
+full_set$no_outliers <- seasonal_ts_data
 
-aeso.nol <- seasonal_ts_data
+
 

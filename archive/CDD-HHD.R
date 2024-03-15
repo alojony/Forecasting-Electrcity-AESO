@@ -5,6 +5,8 @@ library(timeSeries)
 library(astsa)
 library(forecast)
 
+#--- CDD-HDD -----
+
 temperature <-
   read.csv(
     "./data/NW-AB_Temp.csv",
