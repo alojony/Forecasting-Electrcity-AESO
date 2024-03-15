@@ -5,10 +5,42 @@ library(forecast)
 # -----Load and parse data-----
 
 load("./data/aeso.RData")
+aeso <-  aeso[!is.na(aeso$Northwest),]
 dates <- as.Date(aeso$DT_MST)
 
 aeso.nw <- ts(aeso$Northwest, start = c(2011, 1), frequency = 8760)
                       # hourly data for every year since 2011
+# ----- Correct for Missing Values ----
+
+NAtoNeighborAverage <- function(x) {
+  n <- length(x)
+  if (n <= 2) return("not enough data to interpolate") 
+  
+  for (i in 2:(n-1)) {
+    if (is.na(x[i])) {
+      prev_val <- x[i-1]
+      next_val <- x[i+1]
+      
+      # If both neighbors are not NaN, calculate the average; otherwise, use the non-NaN neighbor.
+      if (!is.na(prev_val) && !is.na(next_val)) {
+        x[i] <- mean(c(prev_val, next_val))
+      } else if (!is.na(prev_val)) {
+        x[i] <- prev_val
+      } else if (!is.na(next_val)) {
+        x[i] <- next_val
+      }
+      # Note: If both neighbors are NaN, this doesn't change the current NaN value.
+    }
+  }
+  
+  # Handle first and last elements if they are NaN, by simple forward or backward fill
+  if (is.na(x[1])) x[1] <- x[min(which(!is.na(x)))] # Forward fill
+  if (is.na(x[n])) x[n] <- x[max(which(!is.na(x)))] # Backward fill
+  
+  return("Interpolated")
+}
+
+
 
 
 
@@ -54,27 +86,54 @@ for (i in 1:num_seasons) {
 }
 par(mfrow = c(2, 1))
 
-nol_aeso.nw
+length(nol_aeso.nw)
 
 # -----  Aggregate daily peak load ----
 ts_data <- as.ts(nol_aeso.nw, start = c(2011, 1), frequency = 24)
-# Aggregate by day using the maximum value for each day.
-# Data is hourly, there are 24 hours in a day, we use 'frequency = 24'
-daily_max <- aggregate(ts_data, nfrequency = 365, max)
-# If you want to convert it back to a timeSeries object:
-daily_max_ts <- as.timeSeries(daily_max)
-daily_max
 
+
+if (is.ts(ts_data)) {
+  # Convert to a more generic format for the date conversion
+  start_year <- start(ts_data)[1]
+  start_month <- start(ts_data)[2]
+  frequency_per_year <- frequency(ts_data)
+  # For hourly data,
+  date_values <- seq(from = as.POSIXct(paste(start_year, 
+                                             start_month, 
+                                             "01", "00", "00", 
+                                             sep="-")), 
+                     length.out = length(ts_data), 
+                     by = "hour")
+  date_values <- as.Date(date_values)  # Convert POSIXct to Date for daily aggregation
+}
+
+# Create a data frame for manipulation 
+data_df <- data.frame(date = date_values, value = as.vector(ts_data))  # Convert ts_data to vector
+
+data_df$year <- format(data_df$date, "%Y")
+data_df$day_of_year <- as.integer(format(data_df$date, "%j"))
+length(data_df$day_of_year)
+# Aggregate to find the daily max for each year and day
+daily <- aggregate(value ~ year + day_of_year, data = data_df, FUN = max)
+daily$date <- as.Date(paste0(daily$year, "-", daily$day_of_year), format="%Y-%j")
+daily_max <- daily[, c("date", "value")]
+daily_max$date <- as.Date(daily_max$date)
+daily_max <- daily_max[order(daily_max$date), ]
+daily_max
+# convert it back to a timeSeries object:
+daily_max_ts <- timeSeries(data=daily_max$value, time=daily_max$date)
 # Create a full set object to collect all variables
 start_date <- as.Date("2011-01-01")  # Adjust based on your actual data start date
 end_date <- start_date + length(daily_max) - 1  # Ensuring alignment with 'daily_max' length
-full_dates <- seq.Date(start_date, end_date, by = "day")
+full_dates <- seq.Date(min(daily_max$date),
+                       max(daily_max$date),
+                       by = "day")
 
 # Now, create the 'full_set' data frame
 full_set <- data.frame(DT_MST = full_dates)
 
-full_set$DT_MST <- as.Date("2011-01-01") + 0:(length(daily_max)-1)
-full_set$Northwest <- as.numeric(daily_max)
+full_set$DT_MST <- as.Date(daily_max$date)
+full_set$Northwest <- as.numeric(daily_max_ts)
 
 head(full_set)
 
@@ -87,17 +146,32 @@ holiday_dates <-
 full_set$IsHoliday <-
   ifelse(full_set$DT_MST %in% holiday_dates, 1, 0)
 
+# Defining Seasons
+full_set$season <-
+  cut(
+    as.POSIXlt(full_set$DT_MST)$mon,
+    breaks = c(0, 2, 5, 8, 11, 12),
+    labels = c("Winter", "Spring", "Summer", "Autumn", "Winter"),
+    right = FALSE
+  )
+
+# Create an interaction term between Month and IsHoliday
+full_set$SeasonHoliday <- 
+  interaction(full_set$IsHoliday, full_set$season, drop = TRUE, sep = "-")
+
+# Create the boxplot
+par(mfrow = c(3, 2))  
+boxplot(Northwest ~ SeasonHoliday, data = full_set,
+        xlab = "Holiday - season",
+        ylab = "Load in MW",
+        main = "Load in MW during Holidays by Month",
+        las = 2,
+        cex.axis = 0.8)  
+
 full_set$Weekday <- weekdays(full_set$DT_MST)
 full_set$IsWeekend <-
   ifelse(full_set$Weekday %in% c("Saturday", "Sunday"), 1, 0)
 
-full_set$season <-
-  cut(
-    as.POSIXlt(full_set$DT_MST)$mon,
-    breaks = c(0, 2, 5, 8, 12),
-    labels = c("Winter", "Spring", "Summer", "Autumn"),
-    right = FALSE
-  )
 
 full_set$Year <- as.POSIXlt(full_set$DT_MST)$year + 1900
 
@@ -106,6 +180,8 @@ regions = c("South", "Northwest", "Northeast", "Edmonton", "Calgary", "Central")
 
 
 # To calculate daily max with no outlier correction for
+
+aeso <-  aeso[!is.na(aeso),] 
 aeso$Date <- as.Date(aeso$DT_MST)
 daily_max_df <- data.frame(Date = unique(aeso$Date))
 
@@ -123,5 +199,3 @@ for(region in regions) {
 
 daily_max_df$Total <- rowSums(daily_max_df[regions], na.rm = TRUE)
 full_set$Total <- daily_max_df$Total
-
-
