@@ -87,6 +87,19 @@ holiday_dates <-
 full_set$IsHoliday <-
   ifelse(full_set$DT_MST %in% holiday_dates, 1, 0)
 
+# Create an interaction term between Month and IsHoliday
+full_set$SeasonHoliday <- 
+  interaction(full_set$IsHoliday, full_set$season, drop = TRUE, sep = "-")
+
+# Create the boxplot
+boxplot(Northwest ~ SeasonHoliday, data = full_set,
+        xlab = "Holiday - season",
+        ylab = "Load in MW",
+        main = "Load in MW during Holidays by Month",
+        las = 2,
+        cex.axis = 0.8)  
+
+
 full_set$Weekday <- weekdays(full_set$DT_MST)
 full_set$IsWeekend <-
   ifelse(full_set$Weekday %in% c("Saturday", "Sunday"), 1, 0)
