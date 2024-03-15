@@ -254,6 +254,13 @@ temperature.daily_avg$lag_HDD <-
 temperature.daily_avg$lag_CDD <- 
   c(NA, temperature.daily_avg$CDD[-nrow(temperature.daily_avg)])
 
+# Create lag-2 for the HDD column
+temperature.daily_avg$lag2_HDD <- c(NA, NA, temperature.daily_avg$HDD[-(nrow(temperature.daily_avg)):-(nrow(temperature.daily_avg)-1)])
+
+# Create lag-2 for the CDD column
+temperature.daily_avg$lag2_CDD <- c(NA, NA, temperature.daily_avg$CDD[-(nrow(temperature.daily_avg)):-(nrow(temperature.daily_avg)-1)])
+
+
 # Convert your data frame columns to time series if they aren't already
 HDD_ts <- ts(temperature.daily_avg$HDD)
 CDD_ts <- ts(temperature.daily_avg$CDD)
@@ -324,6 +331,8 @@ full_set$CDD <- temperature.daily_avg$CDD
 full_set$HDD <- temperature.daily_avg$HDD
 full_set$CDD_lag1 <- temperature.daily_avg$lag_CDD
 full_set$HDD_lag1 <- temperature.daily_avg$lag_HDD
+full_set$CDD_lag2 <- temperature.daily_avg$lag2_CDD
+full_set$HDD_lag2 <- temperature.daily_avg$lag2_HDD
 
 
 
