@@ -115,13 +115,12 @@ full_set$tbats_high_95 <- NA
 for (t in 1:nrow(full_set)) {
   tbats_model <-
     tbats(ts(full_set[1:(t - 1), "Northwest"], frequency = 7), model = optimal_model)
-  
-  full_set$tbats_forecast[t] <-
-    forecast(tbats_model, h = 1)$mean
-  full_set$tbats_low_80[t] <- forecast(tbats_model, h = 1)$lower[1]
-  full_set$tbats_high_80[t] <- forecast(tbats_model, h = 1)$upper[1]
-  full_set$tbats_low_95[t] <- forecast(tbats_model, h = 1)$lower[2]
-  full_set$tbats_high_95[t] <- forecast(tbats_model, h = 1)$upper[2]
+  forecast_result <- forecast(tbats_model, h = 1)
+  full_set$tbats_forecast[t] <- forecast_result$mean
+  full_set$tbats_low_80[t] <- forecast_result$lower[1]
+  full_set$tbats_high_80[t] <- forecast_result$upper[1]
+  full_set$tbats_low_95[t] <- forecast_result$lower[2]
+  full_set$tbats_high_95[t] <- forecast_result$upper[2]
 }
 
 
@@ -160,7 +159,21 @@ for (t in 1:nrow(full_set)) {
 }
 
 
-plot(full_set$DT_MST, full_set$tbats_rf_high_95,type='l')
+
+# ETS model 
+
+ets_model <- ets(ts(training_set$Northwest, frequency = 7), allow.multiplicative.trend = T)
+
+for (t in 1:nrow(full_set)) {
+  ets_model <- ets(ts(full_set[1:(t-1), "Northwest"], frequency = 7), model="ANA")
+  forecastt <- forecast(ets_model, h = 1)
+  
+  full_set$ets_forecast[t] <- forecastt$mean
+  full_set$ets_low_80[t] <- forecastt$lower[1]
+  full_set$ets_high_80[t] <- forecastt$upper[1]
+  full_set$ets_low_95[t] <- forecastt$lower[2]
+  full_set$ets_high_95[t] <- forecastt$upper[2]
+}
 
 
 # ----- Item 6 - Collect seasonal accuracy measures for forecasts ----
@@ -197,14 +210,14 @@ for (s in unique(full_set$season)) {
     mape =  mape(seasonal_subset$naive_forecast, seasonal_subset$Northwest),
     pct_bias = pct_bias(seasonal_subset$naive_forecast, seasonal_subset$Northwest)
   )
-   
+  
   
   accuracy_measures[["7d naive"]][[s]] <- list(
     mape = mape(seasonal_subset$seasonal_forecast_7d,
                 seasonal_subset$Northwest),
     pct_bias = pct_bias(seasonal_subset$seasonal_forecast_7d, seasonal_subset$Northwest)
   )
-    
+  
   
   accuracy_measures[["30d naive"]][[s]] <- list(
     mape = mape(seasonal_subset$seasonal_forecast_30d,
@@ -282,98 +295,128 @@ for (s in unique(full_set$season)) {
       seasonal_subset$Northwest
     )
   )
+  
+  accuracy_measures[["ETS"]][[s]] <- list(
+    mape = mape(seasonal_subset$ets_forecast, seasonal_subset$Northwest),
+    pct_bias = pct_bias(seasonal_subset$ets_forecast, seasonal_subset$Northwest),
+    coverage_80 = pct_interval_coverage(
+      seasonal_subset$ets_low_80,
+      seasonal_subset$ets_high_80,
+      seasonal_subset$Northwest
+    ),
+    coverage_95 = pct_interval_coverage(
+      seasonal_subset$ets_low_95,
+      seasonal_subset$ets_high_95,
+      seasonal_subset$Northwest
+    )
+  )
 }
 
 accuracy_measures[["naive"]][["year"]] <- list(
-  mape =  mape(seasonal_subset$naive_forecast, seasonal_subset$Northwest),
-  pct_bias = pct_bias(seasonal_subset$naive_forecast, seasonal_subset$Northwest)
+  mape =  mape(validation_set$naive_forecast, validation_set$Northwest),
+  pct_bias = pct_bias(validation_set$naive_forecast, validation_set$Northwest)
 )
 
 
 accuracy_measures[["7d naive"]][["year"]] <- list(
-  mape = mape(seasonal_subset$seasonal_forecast_7d,
-              seasonal_subset$Northwest),
-  pct_bias = pct_bias(seasonal_subset$seasonal_forecast_7d, seasonal_subset$Northwest)
+  mape = mape(validation_set$seasonal_forecast_7d,
+              validation_set$Northwest),
+  pct_bias = pct_bias(validation_set$seasonal_forecast_7d, validation_set$Northwest)
 )
 
 
 accuracy_measures[["30d naive"]][["year"]] <- list(
-  mape = mape(seasonal_subset$seasonal_forecast_30d,
-              seasonal_subset$Northwest),
-  pct_bias = pct_bias(seasonal_subset$seasonal_forecast_30d, seasonal_subset$Northwest)
+  mape = mape(validation_set$seasonal_forecast_30d,
+              validation_set$Northwest),
+  pct_bias = pct_bias(validation_set$seasonal_forecast_30d, validation_set$Northwest)
 )
 
 accuracy_measures[["rollmean"]][["year"]] <- list(
-  mape = mape(seasonal_subset$rollmean_forecast,
-              seasonal_subset$Northwest),
-  pct_bias = pct_bias(seasonal_subset$rollmean_forecast, seasonal_subset$Northwest)
+  mape = mape(validation_set$rollmean_forecast,
+              validation_set$Northwest),
+  pct_bias = pct_bias(validation_set$rollmean_forecast, validation_set$Northwest)
 )
 
 accuracy_measures[["simple exponential smoothing"]][["year"]] <- list(
-  mape = mape(seasonal_subset$ses_forecast, seasonal_subset$Northwest),
-  pct_bias = pct_bias(seasonal_subset$ses_forecast, seasonal_subset$Northwest)
+  mape = mape(validation_set$ses_forecast, validation_set$Northwest),
+  pct_bias = pct_bias(validation_set$ses_forecast, validation_set$Northwest)
 )
 
 accuracy_measures[["holt"]][["year"]] <- list(
-  mape = mape(seasonal_subset$holt_forecast, seasonal_subset$Northwest),
-  pct_bias = pct_bias(seasonal_subset$holt_forecast, seasonal_subset$Northwest),
+  mape = mape(validation_set$holt_forecast, validation_set$Northwest),
+  pct_bias = pct_bias(validation_set$holt_forecast, validation_set$Northwest),
   coverage_80 = pct_interval_coverage(
-    seasonal_subset$holt_low_80,
-    seasonal_subset$holt_high_80,
-    seasonal_subset$Northwest
+    validation_set$holt_low_80,
+    validation_set$holt_high_80,
+    validation_set$Northwest
   ),
   coverage_95 = pct_interval_coverage(
-    seasonal_subset$holt_low_95,
-    seasonal_subset$holt_high_95,
-    seasonal_subset$Northwest
+    validation_set$holt_low_95,
+    validation_set$holt_high_95,
+    validation_set$Northwest
   )
 )
 
 accuracy_measures[["holt-winters"]][["year"]] <- list(
-  mape = mape(seasonal_subset$hw_forecast, seasonal_subset$Northwest),
-  pct_bias = pct_bias(seasonal_subset$hw_forecast, seasonal_subset$Northwest),
+  mape = mape(validation_set$hw_forecast, validation_set$Northwest),
+  pct_bias = pct_bias(validation_set$hw_forecast, validation_set$Northwest),
   coverage_80 = pct_interval_coverage(
-    seasonal_subset$hw_low_80,
-    seasonal_subset$hw_high_80,
-    seasonal_subset$Northwest
+    validation_set$hw_low_80,
+    validation_set$hw_high_80,
+    validation_set$Northwest
   ),
   coverage_95 = pct_interval_coverage(
-    seasonal_subset$hw_low_95,
-    seasonal_subset$hw_high_95,
-    seasonal_subset$Northwest
-  ),
-  95_size = 
+    validation_set$hw_low_95,
+    validation_set$hw_high_95,
+    validation_set$Northwest
+  ) 
 )
 
 accuracy_measures[["TBATS"]][["year"]] <- list(
-  mape = mape(seasonal_subset$tbats_forecast, seasonal_subset$Northwest),
-  pct_bias = pct_bias(seasonal_subset$tbats_forecast, seasonal_subset$Northwest),
+  mape = mape(validation_set$tbats_forecast, validation_set$Northwest),
+  pct_bias = pct_bias(validation_set$tbats_forecast, validation_set$Northwest),
   coverage_80 = pct_interval_coverage(
-    seasonal_subset$tbats_low_80,
-    seasonal_subset$tbats_high_80,
-    seasonal_subset$Northwest
+    validation_set$tbats_low_80,
+    validation_set$tbats_high_80,
+    validation_set$Northwest
   ),
   coverage_95 = pct_interval_coverage(
-    seasonal_subset$tbats_low_95,
-    seasonal_subset$tbats_high_95,
-    seasonal_subset$Northwest
+    validation_set$tbats_low_95,
+    validation_set$tbats_high_95,
+    validation_set$Northwest
   )
 )
 
 accuracy_measures[["TBATS_rf"]][["year"]] <- list(
-  mape = mape(seasonal_subset$tbats_forecast, seasonal_subset$Northwest),
-  pct_bias = pct_bias(seasonal_subset$tbats_forecast, seasonal_subset$Northwest),
+  mape = mape(validation_set$tbats_rf_forecast, validation_set$Northwest),
+  pct_bias = pct_bias(validation_set$tbats_rf_forecast, validation_set$Northwest),
   coverage_80 = pct_interval_coverage(
-    seasonal_subset$tbats_rf_low_80,
-    seasonal_subset$tbats_rf_high_80,
-    seasonal_subset$Northwest
+    validation_set$tbats_rf_low_80,
+    validation_set$tbats_rf_high_80,
+    validation_set$Northwest
   ),
   coverage_95 = pct_interval_coverage(
-    seasonal_subset$tbats_rf_low_95,
-    seasonal_subset$tbats_rf_high_95,
-    seasonal_subset$Northwest
+    validation_set$tbats_rf_low_95,
+    validation_set$tbats_rf_high_95,
+    validation_set$Northwest
   )
 )
+
+accuracy_measures[["ETS"]][["year"]] <- list(
+  mape = mape(validation_set$ets_forecast, validation_set$Northwest),
+  pct_bias = pct_bias(validation_set$ets_forecast, validation_set$Northwest),
+  coverage_80 = pct_interval_coverage(
+    validation_set$ets_low_80,
+    validation_set$ets_high_80,
+    validation_set$Northwest
+  ),
+  coverage_95 = pct_interval_coverage(
+    validation_set$ets_low_95,
+    validation_set$ets_high_95,
+    validation_set$Northwest
+  )
+)
+
 
 # ----- Output results to file ----
 
