@@ -1,402 +1,402 @@
 $naive
 $naive$Winter
 $naive$Winter$mape
-[1] 1.857812
+[1] 1.774095
 
 $naive$Winter$pct_bias
-[1] -0.003912081
+[1] 0.02186786
 
 
 $naive$Spring
 $naive$Spring$mape
-[1] NaN
+[1] 1.847124
 
 $naive$Spring$pct_bias
-[1] NaN
+[1] 0.2027447
 
 
 $naive$Summer
 $naive$Summer$mape
-[1] 2.468673
+[1] 2.508621
 
 $naive$Summer$pct_bias
-[1] 0.02285889
+[1] 0.02033288
 
 
 $naive$Autumn
 $naive$Autumn$mape
-[1] 2.136845
+[1] 2.340309
 
 $naive$Autumn$pct_bias
-[1] -0.03364423
+[1] -0.06873254
 
 
 
 $`7d naive`
 $`7d naive`$Winter
 $`7d naive`$Winter$mape
-[1] 2.918956
+[1] 2.714083
 
 $`7d naive`$Winter$pct_bias
-[1] 0.2253486
+[1] 0.0993985
 
 
 $`7d naive`$Spring
 $`7d naive`$Spring$mape
-[1] NaN
+[1] 2.815896
 
 $`7d naive`$Spring$pct_bias
-[1] NaN
+[1] 1.087537
 
 
 $`7d naive`$Summer
 $`7d naive`$Summer$mape
-[1] 3.008432
+[1] 3.011519
 
 $`7d naive`$Summer$pct_bias
-[1] -0.1187748
+[1] -0.1288864
 
 
 $`7d naive`$Autumn
 $`7d naive`$Autumn$mape
-[1] 2.695513
+[1] 2.847667
 
 $`7d naive`$Autumn$pct_bias
-[1] -0.6256651
+[1] -0.7890577
 
 
 
 $`30d naive`
 $`30d naive`$Winter
 $`30d naive`$Winter$mape
-[1] 2.784503
+[1] 3.166127
 
 $`30d naive`$Winter$pct_bias
-[1] 0.7482463
+[1] -0.644799
 
 
 $`30d naive`$Spring
 $`30d naive`$Spring$mape
-[1] NaN
+[1] 5.077964
 
 $`30d naive`$Spring$pct_bias
-[1] NaN
+[1] 4.573848
 
 
 $`30d naive`$Summer
 $`30d naive`$Summer$mape
-[1] 4.3164
+[1] 4.35318
 
 $`30d naive`$Summer$pct_bias
-[1] -0.6663883
+[1] -0.6810384
 
 
 $`30d naive`$Autumn
 $`30d naive`$Autumn$mape
-[1] 4.61924
+[1] 4.882417
 
 $`30d naive`$Autumn$pct_bias
-[1] -2.63383
+[1] -2.399278
 
 
 
 $rollmean
 $rollmean$Winter
 $rollmean$Winter$mape
-[1] 1.871188
+[1] 1.9039
 
 $rollmean$Winter$pct_bias
-[1] 0.04394716
+[1] 0.04566397
 
 
 $rollmean$Spring
 $rollmean$Spring$mape
-[1] NaN
+[1] 1.984222
 
 $rollmean$Spring$pct_bias
-[1] NaN
+[1] 0.3866722
 
 
 $rollmean$Summer
 $rollmean$Summer$mape
-[1] 2.319117
+[1] 2.3333
 
 $rollmean$Summer$pct_bias
-[1] -0.03953012
+[1] -0.04270528
 
 
 $rollmean$Autumn
 $rollmean$Autumn$mape
-[1] 2.087302
+[1] 2.13906
 
 $rollmean$Autumn$pct_bias
-[1] -0.1235206
+[1] -0.1814659
 
 
 
 $`simple exponential smoothing`
 $`simple exponential smoothing`$Winter
 $`simple exponential smoothing`$Winter$mape
-[1] 4.878105
+[1] 1.7152
 
 $`simple exponential smoothing`$Winter$pct_bias
-[1] -4.609013
+[1] 0.03670549
 
 
 $`simple exponential smoothing`$Spring
 $`simple exponential smoothing`$Spring$mape
-[1] NaN
+[1] 1.829247
 
 $`simple exponential smoothing`$Spring$pct_bias
-[1] NaN
+[1] 0.3234097
 
 
 $`simple exponential smoothing`$Summer
 $`simple exponential smoothing`$Summer$mape
-[1] 3.848426
+[1] 2.288102
 
 $`simple exponential smoothing`$Summer$pct_bias
-[1] 2.649311
+[1] -0.01716121
 
 
 $`simple exponential smoothing`$Autumn
 $`simple exponential smoothing`$Autumn$mape
-[1] 3.184532
+[1] 2.139366
 
 $`simple exponential smoothing`$Autumn$pct_bias
-[1] -0.1860693
+[1] -0.1450953
 
 
 
 $holt
 $holt$Winter
 $holt$Winter$mape
-[1] 4.890122
+[1] 1.715523
 
 $holt$Winter$pct_bias
-[1] -4.616665
+[1] 0.04608841
 
 $holt$Winter$coverage_80
-[1] 0.2941176
+[1] 0.8232044
 
 $holt$Winter$coverage_95
-[1] 0.5462185
+[1] 0.9502762
 
 
 $holt$Spring
 $holt$Spring$mape
-[1] NaN
+[1] 1.83001
 
 $holt$Spring$pct_bias
-[1] NaN
+[1] 0.3259803
 
 $holt$Spring$coverage_80
-[1] NA
+[1] 0.8532609
 
 $holt$Spring$coverage_95
-[1] NA
+[1] 0.9402174
 
 
 $holt$Summer
 $holt$Summer$mape
-[1] 3.831233
+[1] 2.288118
 
 $holt$Summer$pct_bias
-[1] 2.614609
+[1] -0.0178689
 
 $holt$Summer$coverage_80
-[1] 0.5434783
+[1] 0.7717391
 
 $holt$Summer$coverage_95
-[1] 0.75
+[1] 0.951087
 
 
 $holt$Autumn
 $holt$Autumn$mape
-[1] 3.184549
+[1] 2.138986
 
 $holt$Autumn$pct_bias
-[1] -0.2090051
+[1] -0.1433233
 
 $holt$Autumn$coverage_80
-[1] 0.6106557
+[1] 0.8131868
 
 $holt$Autumn$coverage_95
-[1] 0.807377
+[1] 0.9505495
 
 
 
 $`holt-winters`
 $`holt-winters`$Winter
 $`holt-winters`$Winter$mape
-[1] 5.303446
+[1] 1.691469
 
 $`holt-winters`$Winter$pct_bias
-[1] -5.221983
+[1] 0.03056292
 
 $`holt-winters`$Winter$coverage_80
-[1] 0.2268908
+[1] 0.8066298
 
 $`holt-winters`$Winter$coverage_95
-[1] 0.3697479
+[1] 0.9668508
 
 
 $`holt-winters`$Spring
 $`holt-winters`$Spring$mape
-[1] NaN
+[1] 1.70359
 
 $`holt-winters`$Spring$pct_bias
-[1] NaN
+[1] 0.3323644
 
 $`holt-winters`$Spring$coverage_80
-[1] NA
+[1] 0.8369565
 
 $`holt-winters`$Spring$coverage_95
-[1] NA
+[1] 0.9347826
 
 
 $`holt-winters`$Summer
 $`holt-winters`$Summer$mape
-[1] 3.682204
+[1] 1.948703
 
 $`holt-winters`$Summer$pct_bias
-[1] 2.596126
+[1] -0.006292276
 
 $`holt-winters`$Summer$coverage_80
-[1] 0.5380435
+[1] 0.8478261
 
 $`holt-winters`$Summer$coverage_95
-[1] 0.7445652
+[1] 0.951087
 
 
 $`holt-winters`$Autumn
 $`holt-winters`$Autumn$mape
-[1] 3.094994
+[1] 1.919594
 
 $`holt-winters`$Autumn$pct_bias
-[1] -0.2590911
+[1] -0.1493119
 
 $`holt-winters`$Autumn$coverage_80
-[1] 0.5860656
+[1] 0.8076923
 
 $`holt-winters`$Autumn$coverage_95
-[1] 0.7868852
+[1] 0.9340659
 
 
 
 $TBATS
 $TBATS$Winter
 $TBATS$Winter$mape
-[1] 4.775953
+[1] 1.61653
 
 $TBATS$Winter$pct_bias
-[1] -4.568528
+[1] 0.02219661
 
 $TBATS$Winter$coverage_80
-[1] 0.2605042
+[1] 0.8232044
 
 $TBATS$Winter$coverage_95
-[1] 0.4789916
+[1] 0.9723757
 
 
 $TBATS$Spring
 $TBATS$Spring$mape
-[1] NaN
+[1] 1.74291
 
 $TBATS$Spring$pct_bias
-[1] NaN
+[1] 0.5402823
 
 $TBATS$Spring$coverage_80
-[1] NA
+[1] 0.8043478
 
 $TBATS$Spring$coverage_95
-[1] NA
+[1] 0.9456522
 
 
 $TBATS$Summer
 $TBATS$Summer$mape
-[1] 4.054092
+[1] 2.037703
 
 $TBATS$Summer$pct_bias
-[1] 2.878473
+[1] -0.0424454
 
 $TBATS$Summer$coverage_80
-[1] 0.5434783
+[1] 0.8097826
 
 $TBATS$Summer$coverage_95
-[1] 0.7173913
+[1] 0.9456522
 
 
 $TBATS$Autumn
 $TBATS$Autumn$mape
-[1] 3.313125
+[1] 2.015728
 
 $TBATS$Autumn$pct_bias
-[1] -0.111922
+[1] -0.3214504
 
 $TBATS$Autumn$coverage_80
-[1] 0.5942623
+[1] 0.7967033
 
 $TBATS$Autumn$coverage_95
-[1] 0.7827869
+[1] 0.9340659
 
 
 
 $TBATS_rf
 $TBATS_rf$Winter
 $TBATS_rf$Winter$mape
-[1] 4.775953
+[1] 1.61653
 
 $TBATS_rf$Winter$pct_bias
-[1] -4.568528
+[1] 0.02219661
 
 $TBATS_rf$Winter$coverage_80
-[1] 0.2605042
+[1] 0.6187845
 
 $TBATS_rf$Winter$coverage_95
-[1] 0.4621849
+[1] 0.8342541
 
 
 $TBATS_rf$Spring
 $TBATS_rf$Spring$mape
-[1] NaN
+[1] 1.74291
 
 $TBATS_rf$Spring$pct_bias
-[1] NaN
+[1] 0.5402823
 
 $TBATS_rf$Spring$coverage_80
-[1] NA
+[1] 0.7228261
 
 $TBATS_rf$Spring$coverage_95
-[1] NA
+[1] 0.875
 
 
 $TBATS_rf$Summer
 $TBATS_rf$Summer$mape
-[1] 4.054092
+[1] 2.037703
 
 $TBATS_rf$Summer$pct_bias
-[1] 2.878473
+[1] -0.0424454
 
 $TBATS_rf$Summer$coverage_80
-[1] 0.4565217
+[1] 0.6793478
 
 $TBATS_rf$Summer$coverage_95
-[1] 0.5978261
+[1] 0.826087
 
 
 $TBATS_rf$Autumn
 $TBATS_rf$Autumn$mape
-[1] 3.313125
+[1] 2.015728
 
 $TBATS_rf$Autumn$pct_bias
-[1] -0.111922
+[1] -0.3214504
 
 $TBATS_rf$Autumn$coverage_80
-[1] 0.4713115
+[1] 0.5494505
 
 $TBATS_rf$Autumn$coverage_95
-[1] 0.6352459
+[1] 0.7032967
 
 
 

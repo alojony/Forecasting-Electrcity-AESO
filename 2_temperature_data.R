@@ -269,11 +269,28 @@ CDD_ts <- ts(temperature.daily_avg$CDD)
 lag2_HDD_ts <- c(NA, NA, HDD_ts[-(length(HDD_ts)-1): -length(HDD_ts)])
 lag2_CDD_ts <- c(NA, NA, CDD_ts[-(length(CDD_ts)-1): -length(CDD_ts)])
 
-par(mfrow = c(3, 2))  
+par(mfrow = c(2, 3))  
 plot(temperature.daily_avg$HDD,
      temperature.daily_avg$load,
      main = "Electricity Load vs HDD",
      xlab = "Heating Degree Days (HDD)",
+     ylab = "Electricity Load",
+     col = 'red',
+     pch = 1)
+
+# Plot for Electricity Load vs HDD
+plot(temperature.daily_avg$lag_HDD,
+     temperature.daily_avg$load,
+     main = "Electricity Load vs HDD lag 1",
+     xlab = "Heating Degree Days (lag-1 HDD)",
+     ylab = "Electricity Load",
+     col = 'red',
+     pch = 1)
+# Plot for Electricity Load vs HDD
+plot(lag2_HDD_ts,
+     temperature.daily_avg$load,
+     main = "Electricity Load vs HDD lag 2",
+     xlab = "Heating Degree Days (lag-2 HDD)",
      ylab = "Electricity Load",
      col = 'red',
      pch = 1)
@@ -287,14 +304,6 @@ plot(temperature.daily_avg$CDD,
      col = 'blue',
      pch = 1)
 
-# Plot for Electricity Load vs HDD
-plot(temperature.daily_avg$lag_HDD,
-     temperature.daily_avg$load,
-     main = "Electricity Load vs HDD lag 1",
-     xlab = "Heating Degree Days (lag-1 HDD)",
-     ylab = "Electricity Load",
-     col = 'red',
-     pch = 1)
 
 # Plot for Electricity Load vs CDD
 plot(temperature.daily_avg$lag_CDD,
@@ -304,14 +313,7 @@ plot(temperature.daily_avg$lag_CDD,
      ylab = "Electricity Load",
      col = 'blue',
      pch = 1)
-# Plot for Electricity Load vs HDD
-plot(lag2_HDD_ts,
-     temperature.daily_avg$load,
-     main = "Electricity Load vs HDD lag 2",
-     xlab = "Heating Degree Days (lag-2 HDD)",
-     ylab = "Electricity Load",
-     col = 'red',
-     pch = 1)
+
 
 # Plot for Electricity Load vs CDD
 plot(lag2_CDD_ts,
