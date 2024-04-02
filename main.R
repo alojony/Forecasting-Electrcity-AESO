@@ -1,0 +1,5 @@
+source("1_aeso_data.R")
+source("2_temperature_data.R")
+source("3_census_data.R")
+source("4_smoothing.R")
+source("5_AR_Model.R")
