@@ -33,6 +33,43 @@ fill_NAs_with_nearest_averages <- function(data) {
   return(data)
 }
 
+###
+
+# Function to add noise to a column in meteo_data
+add_noise <- function(column, data_frame) {
+  # Calculate the range of the column
+  value_range <- max(data_frame[[column]], na.rm = TRUE) - min(data_frame[[column]], na.rm = TRUE)
+  
+  # Calculate the average error based on the range
+  avg_error <- (0.02 * value_range)^2
+  
+  # Generate noise
+  noise <- rnorm(n = length(data_frame[[column]]), mean = 0, sd = sqrt(avg_error))
+  
+  # Add noise to the original column values
+  data_frame[[paste0("noisy_", column)]] <- data_frame[[column]] + noise
+  
+  return(data_frame)
+}
+
+
+
+### 
+
+# Function to calculate wind chill using the Canadian wind chill index formula
+calculate_wind_chill <- function(temperature, wind_speed) {
+  # Convert wind speed from meters per second to kilometers per hour if necessary
+  # wind_speed_kmh <- wind_speed * 3.6
+  
+  # Apply the Canadian wind chill formula
+  wind_chill <- ifelse(temperature <= 10 & wind_speed > 4.8,
+                       13.12 + 0.6215 * temperature - 11.37 * (wind_speed^0.16) + 
+                         0.3965 * temperature * (wind_speed^0.16),
+                       temperature) # If conditions not met, wind chill equals the air temperature
+  
+  return(wind_chill)
+}
+
 ## Libraries and Config ##########
 
 # Locale to ENG
@@ -78,7 +115,7 @@ summary(daily.max)
 head(daily.max)
 
 
-########### Delete this; test to find outlier dates#######
+########### START Delete this; test to find outlier dates#######
 # Load the necessary library
 library(lubridate)
 
@@ -86,11 +123,14 @@ library(lubridate)
 
 # Step 1: Filter for January 2014
 # This line creates a new dataframe 'year_interest' that contains only data from January 2014
-year_interest <- aeso.nw[month(as.Date(aeso.nw$DT_MST)) == 5 & year(as.Date(aeso.nw$DT_MST)) == "2011", ]
+# If 'aeso.nw$DT_MST' is already a Date or POSIXt object:
+year_interest <- aeso.nw[month(aeso.nw$DT_MST) == 1 & year(aeso.nw$DT_MST) == 2014, ]
+
 
 # Step 2: Convert 'DT_MST' to POSIXct
 # Ensure the date-time format matches the format in your dataset
-year_interest$DT_MST <- as.POSIXct(year_interest$DT_MST, format = "%Y-%m-%d %H:%M:%S", tz = "UTC")
+year_interest$DT_MST <- as.POSIXct(year_interest$DT_MST, 
+                                   format = "%Y-%m-%d %H:%M:%S", tz = "UTC")
 
 # Step 3: Plot
 # Set up the plot parameters (optional, depending on your specific needs)
@@ -118,6 +158,7 @@ ggplot(year_interest, aes(x = DT_MST, y = Northwest)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + # Rotate labels for readability
   labs(x = "Date", y = "Northwest", title = "Northwest Values over January 2011")
 
+##############################
 
 # Define your outlier threshold. For example, if you decide that any value below 900 is an outlier:
 outlier_threshold <- 1000
@@ -132,7 +173,9 @@ outlier_dates <- outliers$DT_MST
 print(outlier_dates)
 
 head(year_interest)
-########### Delete this; test to find outlier dates#######
+########### END Delete this; test to find outlier dates#######
+
+
 
 # Set the correct timezone for your data
 timezone <- "America/Edmonton"
@@ -182,14 +225,10 @@ plot(aeso.nw$DT_MST, aeso.nw$Northwest,
   xlab = "Date", ylab = "Northwest"
 )
 
-
-
-
 #---- Temperature and Weather Data -----
 
 # Temperature Data extracted from https://acis.alberta.ca/acis/township-data-viewer.jsp
 # Took the 9 main townships that AESO designates as the Northwestern area of Alberta
-
 
 
 
@@ -273,9 +312,41 @@ legend("topright",
   col = c("blue", "red"), lty = 1
 )
 
+# Windchill Variable 
+meteo_data$wind_chill <- mapply(calculate_wind_chill, 
+                                meteo_data$avg_temp, 
+                                meteo_data$wind_speed)
+
+# Apply the function to each column except 'date' and 'avg_temp'
+columns_to_noise <- setdiff(names(meteo_data), c("date", "avg_temp", "township"))
+
+for(column in columns_to_noise) {
+  meteo_data <- add_noise(column, meteo_data)
+}
 
 ## Noise for other Variables
+meteo_data <- aggregate(. ~ date, data = meteo_data, FUN = mean, na.action = na.pass)
 
+# Check the updated dataset
+head(meteo_data)
+
+## Plots for noisy variables 
+for (column in columns_to_noise) {
+  # Define the original and noisy column names
+  original_column <- column
+  noisy_column <- paste0("noisy_", column)
+  
+  # Create a plot with the original data
+  plot(meteo_data$date, meteo_data[[original_column]], type = 'l', 
+       main = paste("Original vs. Noisy", column), xlab = "Date", 
+       ylab = column, col = "blue", lwd = 2)
+  
+  # Add the noisy data to the plot
+  lines(meteo_data$date, meteo_data[[noisy_column]], type = 'l', col = "red", lwd = 2)
+  
+  # Add a legend to distinguish between original and noisy data
+  legend("topright", legend = c("Original", "Noisy"), col = c("blue", "red"), lty = 1, cex = 0.8)
+}
 
 
 ## ---- CDD-HDD -----
@@ -405,5 +476,31 @@ plot(lag2_CDD_ts,
   pch = 1
 )
 
+#----Check for correlation and colinearity between variables ----
+
+# Calculate correlation of all variables with 'load', excluding 'date'
+correlation_with_load <- cor(meteo_data[, sapply(meteo_data, is.numeric)], 
+                             use = "complete.obs")[, "load"]
+correlation_with_load
+
+# Calculate correlation matrix for numeric variables
+numeric_vars <- meteo_data[, sapply(meteo_data, is.numeric)]
+cor_matrix <- cor(numeric_vars, use = "complete.obs")
+cor_matrix
+
+# Define a high correlation threshold (e.g., 0.7 or 0.8)
+high_corr_threshold <- 0.7
+
+# Find pairs of variables (excluding 'load') with correlation above the threshold
+high_corr_pairs <- which(abs(cor_matrix[-ncol(cor_matrix),
+                      -ncol(cor_matrix)]) > high_corr_threshold, arr.ind = TRUE)
+
+# Since 'which' with 'arr.ind=TRUE' returns matrix indices, convert these to variable names
+high_corr_var_pairs <- names(numeric_vars)[-ncol(numeric_vars)][unique(as.vector(high_corr_pairs))]
+high_corr_var_pairs
+
 
 summary(meteo_data)
+
+
+
