@@ -28,9 +28,9 @@ validation_set <-
   subset(full_set, DT_MST > training_end & DT_MST <= validation_end)
 
 
-training_set <-
-  training_set[!is.na(training_set$CDD_lag2) &
-    !is.na(training_set$HDD_lag2), ]
+# training_set <-
+#   training_set[!is.na(training_set$CDD_lag2) &
+#     !is.na(training_set$HDD_lag2), ]
 Yt <- timeSeries(training_set$Northwest, training_set$DT_MST)
 
 # External regressors for training
@@ -69,19 +69,6 @@ ar_model <-
   )
 summary(ar_model)
 
-lm_model <-
-  auto.arima(
-    Yt,
-    xreg = reg_t,
-    d = 0,
-    max.p = 0,
-    max.q = 0,
-    seasonal = FALSE
-  )
-
-lm_model <- lm(Yt ~ ., data = as.data.frame(reg_t))
-summary(lm_model)
-
 # Prepare the external regressors for the validation set
 reg_v <- cbind(
   validation_set$IsHoliday,
@@ -105,21 +92,64 @@ reg_v <- cbind(
   validation_set$Dec
 )
 
+# Pre-allocate the space for lm_forecast
+full_set$ar_forecast <- NA
+full_set$ar_low_80 <- NA
+full_set$ar_low_95 <- NA
+full_set$ar_high_80 <- NA
+full_set$ar_high_95 <- NA
+
+for (t in 100:(nrow(full_set) - 1)) {
+  xreg_t <- as.matrix(reg_v[t, , drop = FALSE])
+  pred <- forecast(ar_model, h = 1, xreg = xreg_t)
+
+  full_set$ar_forecast[t] <- pred$mean[1]
+  full_set$ar_low_80[t] <- pred$lower[1]
+  full_set$ar_low_95[t] <- pred$lower[2]
+  full_set$ar_high_80[t] <- pred$upper[1]
+  full_set$ar_high_95[t] <- pred$upper[2]
+}
 
 
 # Initialize a vector to store forecasts
-ar_forecasts <- numeric(nrow(validation_set))
-ar_forecasts <-
-  predict(ar_model,
-    n.ahead = nrow(validation_set),
-    newxreg = reg_v
-  )$pred
-validation_set$ar_forecast <- ar_forecasts
+# ar_forecasts <- numeric(nrow(validation_set))
+# ar_forecasts <-
+#   predict(ar_model,
+#     n.ahead = nrow(validation_set),
+#     newxreg = reg_v
+#   )$pred
+# validation_set$ar_forecast <- ar_forecasts
 
-ndata <- data.frame(reg_v)
-colnames(ndata) <- paste0("V", 1:19)
-lm_forecasts <- predict(lm_model, newdata = ndata)
-validation_set$lm_forecast <- lm_forecasts
+
+
+
+# ndata <- data.frame(reg_v)
+# colnames(ndata) <- paste0("V", 1:19)
+# lm_forecasts <- predict(lm_model, newdata = ndata)
+# validation_set$lm_forecast <- lm_forecasts
+
+
+lm_model <- lm(Yt ~ ., data = as.data.frame(reg_t))
+summary(lm_model)
+
+# Pre-allocate the space for lm_forecast
+full_set$lm_forecast <- NA
+full_set$lm_low_80 <- NA
+full_set$lm_low_95 <- NA
+full_set$lm_high_80 <- NA
+full_set$lm_high_95 <- NA
+
+for (t in 100:(nrow(full_set) - 1)) {
+  xreg_t <- as.data.frame(reg_v[t, , drop = FALSE])
+
+  pred <- forecast(lm_model, h = 1, newdata = xreg_t)
+
+  full_set$lm_forecast[t] <- pred$mean[1]
+  full_set$lm_low_80[t] <- pred$lower[1]
+  full_set$lm_low_95[t] <- pred$lower[2]
+  full_set$lm_high_80[t] <- pred$upper[1]
+  full_set$lm_high_95[t] <- pred$upper[2]
+}
 
 
 plot(
