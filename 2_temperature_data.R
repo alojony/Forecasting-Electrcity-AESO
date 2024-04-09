@@ -24,7 +24,7 @@ townships <- unique(temperature$Township)
 for (township in townships) {
   # Subset the data for the current township
   subset_data <- temperature[temperature$Township == township, ]
-  
+
   # Interpolate missing values for Temp.Min
   temperature_min_ts <- subset_data$Temp.Min
   missing_min_values <- is.na(temperature_min_ts)
@@ -34,7 +34,7 @@ for (township in townships) {
       y = temperature_min_ts[!missing_min_values],
       xout = which(missing_min_values)
     )$y
-  
+
   # Interpolate missing values for Temp.Max
   temperature_max_ts <- subset_data$Temp.Max
   missing_max_values <- is.na(temperature_max_ts)
@@ -44,7 +44,7 @@ for (township in townships) {
       y = temperature_max_ts[!missing_max_values],
       xout = which(missing_max_values)
     )$y
-  
+
   # Replace the interpolated values in the original data
   temperature[temperature$Township == township, "Temp.Min"] <-
     temperature_min_ts
@@ -116,12 +116,13 @@ print(temperature.daily_avg)
 plot(
   temperature.daily_avg$Date,
   temperature.daily_avg$HDD,
-  type = 'l',
-  col = 'red'
+  type = "l",
+  col = "red"
 )
 lines(temperature.daily_avg$Date,
-      temperature.daily_avg$CDD,
-      col = 'blue')
+  temperature.daily_avg$CDD,
+  col = "blue"
+)
 
 load(
   "./data/aeso.RData"
@@ -148,8 +149,9 @@ daily <-
 daily.max <- aggregate(aeso.TS, daily, max)
 daily.max <-
   transform(daily.max,
-            DT_MST = as.Date(DT_MST),
-            Northwest = as.numeric(Northwest))
+    DT_MST = as.Date(DT_MST),
+    Northwest = as.numeric(Northwest)
+  )
 daily.max <-
   timeSeries(daily.max$Northwest, daily.max$DT_MST, format = "%Y-%m-%d")
 colnames(daily.max) <- c("load")
@@ -172,86 +174,89 @@ print(correlationMatrix)
 lag1.plot(temperature.daily_avg$HDD, max.lag = 2)
 
 # Create lag-1 for the HDD column
-temperature.daily_avg$lag_HDD <- 
+temperature.daily_avg$lag_HDD <-
   c(NA, temperature.daily_avg$HDD[-nrow(temperature.daily_avg)])
 
 # Create lag-1 for the CDD column
-temperature.daily_avg$lag_CDD <- 
+temperature.daily_avg$lag_CDD <-
   c(NA, temperature.daily_avg$CDD[-nrow(temperature.daily_avg)])
 
 # Create lag-2 for the HDD column
-temperature.daily_avg$lag2_HDD <- c(NA, NA, temperature.daily_avg$HDD[-(nrow(temperature.daily_avg)):-(nrow(temperature.daily_avg)-1)])
+temperature.daily_avg$lag2_HDD <- c(NA, NA, temperature.daily_avg$HDD[-(nrow(temperature.daily_avg)):-(nrow(temperature.daily_avg) - 1)])
 
 # Create lag-2 for the CDD column
-temperature.daily_avg$lag2_CDD <- c(NA, NA, temperature.daily_avg$CDD[-(nrow(temperature.daily_avg)):-(nrow(temperature.daily_avg)-1)])
+temperature.daily_avg$lag2_CDD <- 
+  c(NA, NA, temperature.daily_avg$CDD[-(nrow(temperature.daily_avg)):-(nrow(temperature.daily_avg) - 1)])
 
 
 # Convert your data frame columns to time series if they aren't already
 HDD_ts <- ts(temperature.daily_avg$HDD)
 CDD_ts <- ts(temperature.daily_avg$CDD)
 
-# lag-2 for CDD 
-lag2_HDD_ts <- c(NA, NA, HDD_ts[-(length(HDD_ts)-1): -length(HDD_ts)])
-lag2_CDD_ts <- c(NA, NA, CDD_ts[-(length(CDD_ts)-1): -length(CDD_ts)])
+# lag-2 for CDD
+lag2_HDD_ts <- c(NA, NA, HDD_ts[-(length(HDD_ts) - 1):-length(HDD_ts)])
+lag2_CDD_ts <- c(NA, NA, CDD_ts[-(length(CDD_ts) - 1):-length(CDD_ts)])
 
-par(mfrow = c(2, 3))  
+par(mfrow = c(2, 3))
 plot(temperature.daily_avg$HDD,
-     temperature.daily_avg$load,
-     main = "Electricity Load vs HDD",
-     xlab = "Heating Degree Days (HDD)",
-     ylab = "Electricity Load",
-     col = 'red',
-     pch = 1)
+  temperature.daily_avg$load,
+  main = "Electricity Load vs HDD",
+  xlab = "Heating Degree Days (HDD)",
+  ylab = "Electricity Load",
+  col = "red",
+  pch = 1
+)
 
 # Plot for Electricity Load vs HDD
 plot(temperature.daily_avg$lag_HDD,
-     temperature.daily_avg$load,
-     main = "Electricity Load vs HDD lag 1",
-     xlab = "Heating Degree Days (lag-1 HDD)",
-     ylab = "Electricity Load",
-     col = 'red',
-     pch = 1)
+  temperature.daily_avg$load,
+  main = "Electricity Load vs HDD lag 1",
+  xlab = "Heating Degree Days (lag-1 HDD)",
+  ylab = "Electricity Load",
+  col = "red",
+  pch = 1
+)
 # Plot for Electricity Load vs HDD
 plot(lag2_HDD_ts,
-     temperature.daily_avg$load,
-     main = "Electricity Load vs HDD lag 2",
-     xlab = "Heating Degree Days (lag-2 HDD)",
-     ylab = "Electricity Load",
-     col = 'red',
-     pch = 1)
+  temperature.daily_avg$load,
+  main = "Electricity Load vs HDD lag 2",
+  xlab = "Heating Degree Days (lag-2 HDD)",
+  ylab = "Electricity Load",
+  col = "red",
+  pch = 1
+)
 
 # Plot for Electricity Load vs CDD
 plot(temperature.daily_avg$CDD,
-     temperature.daily_avg$load,
-     main = "Electricity Load vs CDD",
-     xlab = "Cooling Degree Days (CDD)",
-     ylab = "Electricity Load",
-     col = 'blue',
-     pch = 1)
+  temperature.daily_avg$load,
+  main = "Electricity Load vs CDD",
+  xlab = "Cooling Degree Days (CDD)",
+  ylab = "Electricity Load",
+  col = "blue",
+  pch = 1
+)
 
 
 # Plot for Electricity Load vs CDD
 plot(temperature.daily_avg$lag_CDD,
-     temperature.daily_avg$load,
-     main = "Electricity Load vs CDD lag 1",
-     xlab = "Cooling Degree Days (lag-1 CDD)",
-     ylab = "Electricity Load",
-     col = 'blue',
-     pch = 1)
+  temperature.daily_avg$load,
+  main = "Electricity Load vs CDD lag 1",
+  xlab = "Cooling Degree Days (lag-1 CDD)",
+  ylab = "Electricity Load",
+  col = "blue",
+  pch = 1
+)
 
 
 # Plot for Electricity Load vs CDD
 plot(lag2_CDD_ts,
-     temperature.daily_avg$load,
-     main = "Electricity Load vs CDD lag 2",
-     xlab = "Cooling Degree Days (lag-2 CDD)",
-     ylab = "Electricity Load",
-     col = 'blue',
-     pch = 1)
+  temperature.daily_avg$load,
+  main = "Electricity Load vs CDD lag 2",
+  xlab = "Cooling Degree Days (lag-2 CDD)",
+  ylab = "Electricity Load",
+  col = "blue",
+  pch = 1
+)
 
 
 summary(temperature.daily_avg)
-
-
-
-

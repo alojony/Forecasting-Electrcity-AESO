@@ -1,5 +1,3 @@
-
-
 # dummies
 full_set$IsHoliday <- as.numeric(full_set$IsHoliday)
 full_set$IsWinter <- as.numeric(full_set$season == "Winter")
@@ -32,7 +30,7 @@ validation_set <-
 
 training_set <-
   training_set[!is.na(training_set$CDD_lag2) &
-                 !is.na(training_set$HDD_lag2),]
+    !is.na(training_set$HDD_lag2), ]
 Yt <- timeSeries(training_set$Northwest, training_set$DT_MST)
 
 # External regressors for training
@@ -113,8 +111,9 @@ reg_v <- cbind(
 ar_forecasts <- numeric(nrow(validation_set))
 ar_forecasts <-
   predict(ar_model,
-          n.ahead = nrow(validation_set),
-          newxreg = reg_v)$pred
+    n.ahead = nrow(validation_set),
+    newxreg = reg_v
+  )$pred
 validation_set$ar_forecast <- ar_forecasts
 
 ndata <- data.frame(reg_v)
@@ -126,32 +125,32 @@ validation_set$lm_forecast <- lm_forecasts
 plot(
   validation_set$DT_MST,
   validation_set$Northwest,
-  type = 'l',
-  col = 'blue',
-  ylab = 'Northwest',
-  xlab = 'Date'
+  type = "l",
+  col = "blue",
+  ylab = "Northwest",
+  xlab = "Date"
 )
-lines(validation_set$DT_MST, validation_set$ar_forecast, col = 'red')
+lines(validation_set$DT_MST, validation_set$ar_forecast, col = "red")
 legend(
-  'topleft',
-  legend = c('Actual', 'AR-Forecast'),
-  col = c('blue', 'red'),
+  "topleft",
+  legend = c("Actual", "AR-Forecast"),
+  col = c("blue", "red"),
   lty = 1
 )
 
 plot(
   validation_set$DT_MST,
   validation_set$Northwest,
-  type = 'l',
-  col = 'blue',
-  ylab = 'Northwest',
-  xlab = 'Date'
+  type = "l",
+  col = "blue",
+  ylab = "Northwest",
+  xlab = "Date"
 )
-lines(validation_set$DT_MST, validation_set$lm_forecast, col = 'red')
+lines(validation_set$DT_MST, validation_set$lm_forecast, col = "red")
 legend(
-  'topleft',
-  legend = c('Actual', 'LM_Forecast'),
-  col = c('blue', 'red'),
+  "topleft",
+  legend = c("Actual", "LM_Forecast"),
+  col = c("blue", "red"),
   lty = 1
 )
 
@@ -189,12 +188,12 @@ results <- data.frame(
 seasons <- unique(validation_set$season)
 for (season in seasons) {
   for (forecast_type in c("ar_forecast", "lm_forecast")) {
-    subset_data <- validation_set[validation_set$season == season,]
+    subset_data <- validation_set[validation_set$season == season, ]
     mape_value <-
       mape(subset_data$Northwest, subset_data[[forecast_type]])
     pct_bias_value <-
       pct_bias(subset_data$Northwest, subset_data[[forecast_type]])
-    
+
     results <- rbind(
       results,
       data.frame(
@@ -213,7 +212,7 @@ for (forecast_type in c("ar_forecast", "lm_forecast")) {
     mape(validation_set$Northwest, validation_set[[forecast_type]])
   pct_bias_value <-
     pct_bias(validation_set$Northwest, validation_set[[forecast_type]])
-  
+
   results <- rbind(
     results,
     data.frame(
