@@ -23,6 +23,27 @@ rollmean_forecast <-
 full_set$rollmean_forecast <- c(NA, head(rollmean_forecast, -1))
 
 
+# ----- Define dummy variables ----
+full_set$IsWinter <- as.numeric(full_set$season == "Winter")
+full_set$IsSpring <- as.numeric(full_set$season == "Spring")
+full_set$IsSummer <- as.numeric(full_set$season == "Summer")
+full_set$IsFall <- as.numeric(full_set$season == "Autumn")
+
+full_set$Month <- as.numeric(format(full_set$DT_MST, "%m"))
+full_set$Feb <- as.numeric(full_set$Month == 2)
+full_set$Mar <- as.numeric(full_set$Month == 3)
+full_set$Apr <- as.numeric(full_set$Month == 4)
+full_set$May <- as.numeric(full_set$Month == 5)
+full_set$Jun <- as.numeric(full_set$Month == 6)
+full_set$Jul <- as.numeric(full_set$Month == 7)
+full_set$Aug <- as.numeric(full_set$Month == 8)
+full_set$Sep <- as.numeric(full_set$Month == 9)
+full_set$Oct <- as.numeric(full_set$Month == 10)
+full_set$Nov <- as.numeric(full_set$Month == 11)
+full_set$Dec <- as.numeric(full_set$Month == 12)
+
+
+
 
 # ----- Item 5 - Define training, validation and test sets ----
 
