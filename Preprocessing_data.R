@@ -119,7 +119,8 @@ head(daily.max)
 # Load the necessary library
 library(lubridate)
 
-# Assuming 'aeso.nw' is your dataset and it has a column 'DT_MST' with date-time strings and 'Northwest' with values to plot
+# Assuming 'aeso.nw' is your dataset and it has a column 'DT_MST' 
+# with date-time strings and 'Northwest' with values to plot
 
 # Step 1: Filter for January 2014
 # This line creates a new dataframe 'year_interest' that contains only data from January 2014
@@ -176,7 +177,6 @@ head(year_interest)
 ########### END Delete this; test to find outlier dates#######
 
 
-
 # Set the correct timezone for your data
 timezone <- "America/Edmonton"
 
@@ -227,8 +227,9 @@ plot(aeso.nw$DT_MST, aeso.nw$Northwest,
 
 #---- Temperature and Weather Data -----
 
-# Temperature Data extracted from https://acis.alberta.ca/acis/township-data-viewer.jsp
-# Took the 9 main townships that AESO designates as the Northwestern area of Alberta
+# Temperature Data extracted from: 
+# https://acis.alberta.ca/acis/township-data-viewer.jsp
+# The 9 main townships that AESO designates as the Northwestern area of Alberta
 
 
 
@@ -325,7 +326,8 @@ for(column in columns_to_noise) {
 }
 
 ## Noise for other Variables
-meteo_data <- aggregate(. ~ date, data = meteo_data, FUN = mean, na.action = na.pass)
+meteo_data <- aggregate(. ~ date, data = meteo_data, 
+                        FUN = mean, na.action = na.pass)
 
 # Check the updated dataset
 head(meteo_data)
@@ -342,10 +344,12 @@ for (column in columns_to_noise) {
        ylab = column, col = "blue", lwd = 2)
   
   # Add the noisy data to the plot
-  lines(meteo_data$date, meteo_data[[noisy_column]], type = 'l', col = "red", lwd = 2)
+  lines(meteo_data$date, meteo_data[[noisy_column]], 
+        type = 'l', col = "red", lwd = 2)
   
   # Add a legend to distinguish between original and noisy data
-  legend("topright", legend = c("Original", "Noisy"), col = c("blue", "red"), lty = 1, cex = 0.8)
+  legend("topright", legend = c("Original", "Noisy"),
+         col = c("blue", "red"), lty = 1, cex = 0.8)
 }
 
 
