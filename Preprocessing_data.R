@@ -90,29 +90,6 @@ which(is.na(aeso.nw))
 # Drop the NA Dates
 aeso.nw <- aeso.nw[!is.na(aeso.nw$Northwest), ]
 which(is.na(aeso.nw))
-# Convert to TS
-aeso.TS <- timeSeries(aeso.nw, aeso.nw$DT_MST, format = "%Y-%m-%d")
-aeso.TS <- aeso.TS[, c("DT_MST", "Northwest")]
-# Get a daily max TS
-daily <-
-  timeSequence(
-    from = min(aeso.TS$DT_MST),
-    to = max(aeso.TS$DT_MST),
-    by = "day"
-  )
-daily.max <- aggregate(aeso.TS, daily, max)
-daily.max <-
-  transform(daily.max,
-    DT_MST = as.Date(DT_MST),
-    Northwest = as.numeric(Northwest)
-  )
-daily.max <-
-  timeSeries(daily.max$Northwest, daily.max$DT_MST, format = "%Y-%m-%d")
-colnames(daily.max) <- c("load")
-summary(daily.max)
-
-
-head(daily.max)
 
 
 ########### START Delete this; test to find outlier dates#######
@@ -176,13 +153,12 @@ print(outlier_dates)
 head(year_interest)
 ########### END Delete this; test to find outlier dates#######
 
-
 # Set the correct timezone for your data
 timezone <- "America/Edmonton"
 
 # Convert the DT_MST column to POSIXct with the correct timezone
-aeso.nw$DT_MST <- as.POSIXct(aeso.nw$DT_MST, tz = timezone)
-
+aeso.nw$DT_MST <- as.POSIXct(aeso.nw$DT_MST, format = "%Y-%m-%d %H:%M:%S",tz = timezone)
+head(aeso.nw)
 # Define the range of outliers with the correct timezone
 outlier_start <- as.POSIXct("2011-01-14 00:00:00", tz = timezone)
 outlier_end <- as.POSIXct("2011-01-21 00:00:00", tz = timezone)
@@ -224,6 +200,31 @@ plot(aeso.nw$DT_MST, aeso.nw$Northwest,
   main = "Northwest Values After Replacing Outliers",
   xlab = "Date", ylab = "Northwest"
 )
+
+# Convert to TS
+aeso.TS <- timeSeries(aeso.nw, aeso.nw$DT_MST, format = "%Y-%m-%d")
+aeso.TS <- aeso.TS[, c("DT_MST", "Northwest")]
+# Get a daily max TS
+daily <-
+  timeSequence(
+    from = min(aeso.TS$DT_MST),
+    to = max(aeso.TS$DT_MST),
+    by = "day"
+  )
+daily.max <- aggregate(aeso.TS, daily, max)
+daily.max <-
+  transform(daily.max,
+            DT_MST = as.Date(DT_MST),
+            Northwest = as.numeric(Northwest)
+  )
+daily.max <-
+  timeSeries(daily.max$Northwest, daily.max$DT_MST, format = "%Y-%m-%d")
+colnames(daily.max) <- c("load")
+summary(daily.max)
+
+
+head(daily.max)
+
 
 #---- Temperature and Weather Data -----
 
