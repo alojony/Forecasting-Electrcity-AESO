@@ -90,29 +90,6 @@ which(is.na(aeso.nw))
 # Drop the NA Dates
 aeso.nw <- aeso.nw[!is.na(aeso.nw$Northwest), ]
 which(is.na(aeso.nw))
-# Convert to TS
-aeso.TS <- timeSeries(aeso.nw, aeso.nw$DT_MST, format = "%Y-%m-%d")
-aeso.TS <- aeso.TS[, c("DT_MST", "Northwest")]
-# Get a daily max TS
-daily <-
-  timeSequence(
-    from = min(aeso.TS$DT_MST),
-    to = max(aeso.TS$DT_MST),
-    by = "day"
-  )
-daily.max <- aggregate(aeso.TS, daily, max)
-daily.max <-
-  transform(daily.max,
-    DT_MST = as.Date(DT_MST),
-    Northwest = as.numeric(Northwest)
-  )
-daily.max <-
-  timeSeries(daily.max$Northwest, daily.max$DT_MST, format = "%Y-%m-%d")
-colnames(daily.max) <- c("load")
-summary(daily.max)
-
-
-head(daily.max)
 
 
 ########### START Delete this; test to find outlier dates#######
@@ -159,8 +136,6 @@ ggplot(year_interest, aes(x = DT_MST, y = Northwest)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + # Rotate labels for readability
   labs(x = "Date", y = "Northwest", title = "Northwest Values over January 2011")
 
-##############################
-
 # Define your outlier threshold. For example, if you decide that any value below 900 is an outlier:
 outlier_threshold <- 1000
 
@@ -175,14 +150,12 @@ print(outlier_dates)
 
 head(year_interest)
 ########### END Delete this; test to find outlier dates#######
-
-
-# Set the correct timezone for your data
-timezone <- "America/Edmonton"
-
+timezone <-  "America/Edmonton"
 # Convert the DT_MST column to POSIXct with the correct timezone
+
 aeso.nw$DT_MST <- as.POSIXct(aeso.nw$DT_MST, tz = timezone, format = "%Y-%m-%d %H:%M:%S")
 
+head(aeso.nw)
 # Define the range of outliers with the correct timezone
 outlier_start <- as.POSIXct("2011-01-14 00:00:00", tz = timezone)
 outlier_end <- as.POSIXct("2011-01-21 00:00:00", tz = timezone)
@@ -209,14 +182,14 @@ find_value_one_week_prior <- function(date, data) {
 # Loop through the range of outlier dates and replace the values
 for (date in outlier_dates) {
   index_one_week_prior <- find_value_one_week_prior(date, aeso.nw)
-  if (!is.na(index_one_week_prior)) {
+  if (any(!is.na(index_one_week_prior))) { # Check if any index is not NA
     # Replace the value at the outlier index with the value from one week prior
-    aeso.nw$Northwest[which(aeso.nw$DT_MST == date)] <- aeso.nw$Northwest[index_one_week_prior]
+    # Since index_one_week_prior can be a vector, you might want to specify which value to use if there are multiple
+    aeso.nw$Northwest[which(aeso.nw$DT_MST == date)] <- aeso.nw$Northwest[index_one_week_prior[1]] # Using the first match
   } else {
     warning(paste("No matching date one week prior for", date))
   }
 }
-
 
 # Plot the data
 plot(aeso.nw$DT_MST, aeso.nw$Northwest,
@@ -225,19 +198,23 @@ plot(aeso.nw$DT_MST, aeso.nw$Northwest,
   xlab = "Date", ylab = "Northwest"
 )
 
+# Aggregate to find the daily maximum for the 'Northwest' measurement
+aeso.nw$Date <- as.Date(aeso.nw$DT_MST)
+daily.max <- aggregate(Northwest ~ Date, data = aeso.nw, max)
+
+head(daily.max)
+
 #---- Temperature and Weather Data -----
 
 # Temperature Data extracted from: 
 # https://acis.alberta.ca/acis/township-data-viewer.jsp
 # The 9 main townships that AESO designates as the Northwestern area of Alberta
 
-
-
 temperature <- read.csv("./data/NW-AB_Temp.csv", sep = ",", header = TRUE)
 
 # Rename Columns for easy accesibility
 new_column_names <- c(
-  "township", "date", "avg_temp", "min_temp", "max_temp",
+  "township", "Date", "avg_temp", "min_temp", "max_temp",
   "precip", "precip_acc", "humidity_avg", "snow-water_eq",
   "solar_rad", "wind_speed"
 )
@@ -247,13 +224,12 @@ head(temperature)
 
 # Extract Desired Columns
 meteo_data <- temperature[c(
-  "township", "date", "avg_temp", "min_temp", "max_temp",
+  "township", "Date", "avg_temp", "min_temp", "max_temp",
   "humidity_avg", "wind_speed"
 )]
 head(meteo_data)
-length(meteo_data$date)
+length(meteo_data$Date)
 # Fill NA on temperature data
-
 
 meteo_data$avg_temp <- fill_NAs_with_nearest_averages(meteo_data$avg_temp)
 meteo_data$min_temp <- fill_NAs_with_nearest_averages(meteo_data$min_temp)
@@ -263,10 +239,10 @@ meteo_data$wind_speed <- fill_NAs_with_nearest_averages(meteo_data$wind_speed)
 
 # Generate noise
 head(meteo_data)
-length(meteo_data$date)
+length(meteo_data$Date)
 
 # Ensure the 'date' column is in the correct Date format
-meteo_data$date <- as.Date(meteo_data$date)
+meteo_data$Date <- as.Date(meteo_data$Date)
 
 # Get the temp range and calculate the noise
 temp_range <- max(meteo_data$max_temp) - min(meteo_data$min_temp)
@@ -275,19 +251,19 @@ noise <- rnorm(length(meteo_data$avg_temp), 0, avg_error)
 meteo_data$noisy_temp <- meteo_data$avg_temp + noise
 
 meteo_data <- subset(meteo_data, select = -c(township))
-meteo_data <- aggregate(. ~ date, data = meteo_data, FUN = mean)
+meteo_data <- aggregate(. ~ Date, data = meteo_data, FUN = mean)
 head(meteo_data)
-length(meteo_data$date)
+length(meteo_data$Date)
 
 # Plot avg_temp
-plot(meteo_data$date, meteo_data$noisy_temp,
+plot(meteo_data$Date, meteo_data$noisy_temp,
   type = "l", col = "red",
   ylim = range(c(meteo_data$avg_temp, meteo_data$noisy_temp)),
   xlab = "Observation", ylab = "Temperature",
   main = "Average vs. Noisy Temperatures \n with same half the std of avg temp"
 )
 # Add noisy_temp to the same plot
-lines(meteo_data$date, meteo_data$avg_temp, type = "l", col = "blue")
+lines(meteo_data$Date, meteo_data$avg_temp, type = "l", col = "blue")
 
 # Add a legend
 legend("topright",
@@ -296,16 +272,16 @@ legend("topright",
 )
 
 # Temperature yearly
-meteo_data_year <- meteo_data[format(meteo_data$date, "%Y") == "2013", ]
+meteo_data_year <- meteo_data[format(meteo_data$Date, "%Y") == "2013", ]
 
 # Plotting
-plot(meteo_data_year$date, meteo_data_year$avg_temp,
+plot(meteo_data_year$Date, meteo_data_year$avg_temp,
   type = "l", col = "blue",
   ylim = range(c(meteo_data_year$avg_temp, meteo_data_year$noisy_temp)),
   xlab = "Date", ylab = "Temperature",
   main = "Average vs. Noisy Temperatures for 2023"
 )
-lines(meteo_data_year$date, meteo_data_year$noisy_temp, type = "l", col = "red")
+lines(meteo_data_year$Date, meteo_data_year$noisy_temp, type = "l", col = "red")
 
 # Adding a legend
 legend("topright",
@@ -319,14 +295,14 @@ meteo_data$wind_chill <- mapply(calculate_wind_chill,
                                 meteo_data$wind_speed)
 
 # Apply the function to each column except 'date' and 'avg_temp'
-columns_to_noise <- setdiff(names(meteo_data), c("date", "avg_temp", "township"))
+columns_to_noise <- setdiff(names(meteo_data), c("Date", "avg_temp", "township"))
 
 for(column in columns_to_noise) {
   meteo_data <- add_noise(column, meteo_data)
 }
 
 ## Noise for other Variables
-meteo_data <- aggregate(. ~ date, data = meteo_data, 
+meteo_data <- aggregate(. ~ Date, data = meteo_data, 
                         FUN = mean, na.action = na.pass)
 
 # Check the updated dataset
@@ -339,12 +315,12 @@ for (column in columns_to_noise) {
   noisy_column <- paste0("noisy_", column)
   
   # Create a plot with the original data
-  plot(meteo_data$date, meteo_data[[original_column]], type = 'l', 
+  plot(meteo_data$Date, meteo_data[[original_column]], type = 'l', 
        main = paste("Original vs. Noisy", column), xlab = "Date", 
        ylab = column, col = "blue", lwd = 2)
   
   # Add the noisy data to the plot
-  lines(meteo_data$date, meteo_data[[noisy_column]], 
+  lines(meteo_data$Date, meteo_data[[noisy_column]], 
         type = 'l', col = "red", lwd = 2)
   
   # Add a legend to distinguish between original and noisy data
@@ -372,29 +348,25 @@ meteo_data$CDD <- pmax(T_t - T_ref, 0)
 print(meteo_data)
 
 plot(
-  meteo_data$date,
+  meteo_data$Date,
   meteo_data$HDD,
   type = "l",
   col = "red"
 )
-lines(meteo_data$date,
+lines(meteo_data$Date,
   meteo_data$CDD,
   col = "blue"
 )
 
-
+#daily.max$date <- as.Date(daily.max$DT_MST)
 head(meteo_data)
-mergedData <- merge(daily.max, meteo_data, by = "date")
+mergedData <- merge(daily.max, meteo_data, by = "Date")
 cleanData <- na.omit(mergedData)
 head(mergedData)
-meteo_data <- subset(meteo_data, date <= as.Date("2019-12-31"))
-meteo_data$load <- daily.max$load
-# Calculate correlation
-correlationMatrix <-
-  cor(meteo_data[, c("load", "HDD", "CDD")], use = "complete.obs")
-
-# Print the correlation matrix
-print(correlationMatrix)
+daily.max <- subset(daily.max, Date <= as.Date("2019-12-31"))
+meteo_data$load <- daily.max$Northwest
+max(meteo_data$Date)
+tail(daily.max)
 
 # Create lag-1 for the HDD column
 meteo_data$lag_HDD <-
@@ -482,10 +454,6 @@ plot(lag2_CDD_ts,
 
 #----Check for correlation and colinearity between variables ----
 
-# Calculate correlation of all variables with 'load', excluding 'date'
-correlation_with_load <- cor(meteo_data[, sapply(meteo_data, is.numeric)], 
-                             use = "complete.obs")[, "load"]
-correlation_with_load
 
 # Calculate correlation matrix for numeric variables
 numeric_vars <- meteo_data[, sapply(meteo_data, is.numeric)]
@@ -506,5 +474,5 @@ high_corr_var_pairs
 
 summary(meteo_data)
 
-
-
+head(daily.max)
+head(meteo_data)
