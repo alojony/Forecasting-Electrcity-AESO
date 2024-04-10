@@ -119,7 +119,7 @@ head(daily.max)
 # Load the necessary library
 library(lubridate)
 
-# Assuming 'aeso.nw' is your dataset and it has a column 'DT_MST' 
+# Assuming 'aeso.nw' is your dataset and it has a column 'DT_MST'
 # with date-time strings and 'Northwest' with values to plot
 
 # Step 1: Filter for January 2014
@@ -181,7 +181,7 @@ head(year_interest)
 timezone <- "America/Edmonton"
 
 # Convert the DT_MST column to POSIXct with the correct timezone
-aeso.nw$DT_MST <- as.POSIXct(aeso.nw$DT_MST, tz = timezone)
+aeso.nw$DT_MST <- as.POSIXct(aeso.nw$DT_MST, tz = timezone, format = "%Y-%m-%d %H:%M:%S")
 
 # Define the range of outliers with the correct timezone
 outlier_start <- as.POSIXct("2011-01-14 00:00:00", tz = timezone)
