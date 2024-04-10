@@ -362,7 +362,8 @@ head(meteo_data)
 mergedData <- merge(daily.max, meteo_data, by = "Date")
 cleanData <- na.omit(mergedData)
 head(mergedData)
-meteo_data$load <- daily.max$load
+daily.max <- subset(daily.max, Date <= as.Date("2019-12-31"))
+meteo_data$load <- daily.max$Northwest
 max(meteo_data$Date)
 tail(daily.max)
 
