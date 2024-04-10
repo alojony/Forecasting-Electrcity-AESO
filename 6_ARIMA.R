@@ -1,19 +1,7 @@
 # Load required libraries
 library(astsa)
 
-# Step 3: Visualize Data
-# Plot your time series data
-plot(full_set$Northwest, main = "Time Series Data")
-
-# Step 4: Perform Differencing
-# Check for stationarity and perform differencing if needed
-Northwest_diff <- diff(full_set$Northwest)
-
 pdf("sarima_diagns.pdf")
-# Step 5: Identify Autocorrelation and Partial Autocorrelation
-# ACF and PACF plots to identify potential values for p and q
-acf(Northwest_diff, main = "ACF Plot")
-pacf(Northwest_diff, main = "PACF Plot")
 
 # Step 6: Grid Search
 # Grid search to find the best SARIMA parameters
@@ -27,7 +15,6 @@ Q_range <- 0:1
 
 # Create empty list to store results
 results <- list()
-
 # Perform grid search
 for (p in p_range) {
   for (d in d_range) {
@@ -37,7 +24,7 @@ for (p in p_range) {
           for (Q in Q_range) {
             model <- tryCatch(
               # Fit SARIMA model
-              sarima(full_set$Northwest, p = p, d = d, q = q, P = P, D = D, Q = Q, S=7),
+              sarima(training_set$Northwest, p = p, d = d, q = q, P = P, D = D, Q = Q, S=7, xreg = reg_t),
               error = function(e) NULL
             )
             Sys.sleep(2)
@@ -52,31 +39,29 @@ for (p in p_range) {
   }
 }
 
-# Find model with lowest AIC value
-best_model_params <- names(which.min(unlist(results)))
 
 # Step 7: Evaluate Model Fit
 # Fit the best model
-best_model <- sarima(full_set$Northwest, p = best_model_params[2], 
-                     d = best_model_params[4], q = best_model_params[6],
-                     P = best_model_params[8], D = best_model_params[10],
-                     Q = best_model_params[12])
+best_model <- sarima(full_set$Northwest, p = 0, d = 0, q = 0, P = 0, D = 0, Q = 0, S = 7, xreg = reg_f)
 
 # Plot ACF and PACF of residuals
 tsdiag(best_model)
 
-# Step 10: Incorporate Regressors
-# Once you have the best SARIMA model, incorporate regressors
-# Fit SARIMA model with regressors
-final_model <- sarima(full_set$Northwest, p = best_model_params[2], 
-                      d = best_model_params[4], q = best_model_params[6],
-                      P = best_model_params[8], D = best_model_params[10],
-                      Q = best_model_params[12],
-                      xreg = your_regressors)
-
 # Forecast using the final model
-forecast <- predict(final_model, n.ahead = forecast_horizon, 
-                    newxreg = your_future_regressors)
+full_set$arima_forecast <- NA
+full_set$arima_low_80 <- NA
+full_set$arima_low_95 <- NA
+full_set$arima_high_80 <- NA
+full_set$arima_high_95 <- NA
 
-# Plot forecast
-plot(forecast)
+for (t in 100:(nrow(full_set) - 1)) {
+  xreg_t <- as.matrix(reg_f[t, , drop = FALSE])
+  pred <- forecast(ar_model, h = 1, xreg = xreg_t)
+
+  full_set$arima_forecast[t] <- pred$mean[1]
+  full_set$arima_low_80[t] <- pred$lower[1]
+  full_set$arima_low_95[t] <- pred$lower[2]
+  full_set$arima_high_80[t] <- pred$upper[1]
+  full_set$arima_high_95[t] <- pred$upper[2]
+}
+

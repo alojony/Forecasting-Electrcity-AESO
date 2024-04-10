@@ -1,9 +1,9 @@
 # dummies
 full_set$IsHoliday <- as.numeric(full_set$IsHoliday)
-full_set$IsWinter <- as.numeric(full_set$season == "Winter")
-full_set$IsSpring <- as.numeric(full_set$season == "Spring")
-full_set$IsSummer <- as.numeric(full_set$season == "Summer")
-full_set$IsFall <- as.numeric(full_set$season == "Autumn")
+# full_set$IsWinter <- as.numeric(full_set$season == "Winter")
+# full_set$IsSpring <- as.numeric(full_set$season == "Spring")
+# full_set$IsSummer <- as.numeric(full_set$season == "Summer")
+# full_set$IsFall <- as.numeric(full_set$season == "Autumn")
 
 full_set$Month <- format(full_set$DT_MST, "%m")
 full_set$Feb <- as.numeric(full_set$Month == "02")
@@ -33,6 +33,8 @@ validation_set <-
 #     !is.na(training_set$HDD_lag2), ]
 Yt <- timeSeries(training_set$Northwest, training_set$DT_MST)
 
+training_meteo <- subset(meteo_data, date <= training_end)
+
 # External regressors for training
 reg_t <- cbind(
   training_set$IsHoliday,
@@ -53,7 +55,10 @@ reg_t <- cbind(
   training_set$Sep,
   training_set$Oct,
   training_set$Nov,
-  training_set$Dec
+  training_set$Dec,
+  training_meteo$wind_chill,
+  training_meteo$avg_temp,
+  training_meteo$humidity_avg
 )
 
 
@@ -63,36 +68,39 @@ ar_model <-
     Yt,
     xreg = reg_t,
     d = 0,
-    max.p = 20,
+    max.p = 3,
     max.q = 0,
     seasonal = FALSE
   )
 summary(ar_model)
 
 # Prepare the external regressors for the validation set
-reg_v <- cbind(
-  validation_set$IsHoliday,
-  validation_set$IsWeekend,
-  validation_set$HDD,
-  validation_set$CDD,
-  validation_set$HDD_lag1,
-  validation_set$CDD_lag1,
-  validation_set$HDD_lag2,
-  validation_set$CDD_lag2,
-  validation_set$Feb,
-  validation_set$Mar,
-  validation_set$Apr,
-  validation_set$May,
-  validation_set$Jun,
-  validation_set$Jul,
-  validation_set$Aug,
-  validation_set$Sep,
-  validation_set$Oct,
-  validation_set$Nov,
-  validation_set$Dec
+reg_f <- cbind(
+  full_set$IsHoliday,
+  full_set$IsWeekend,
+  full_set$HDD,
+  full_set$CDD,
+  full_set$HDD_lag1,
+  full_set$CDD_lag1,
+  full_set$HDD_lag2,
+  full_set$CDD_lag2,
+  full_set$Feb,
+  full_set$Mar,
+  full_set$Apr,
+  full_set$May,
+  full_set$Jun,
+  full_set$Jul,
+  full_set$Aug,
+  full_set$Sep,
+  full_set$Oct,
+  full_set$Nov,
+  full_set$Dec,
+  meteo_data$wind_chill,
+  meteo_data$avg_temp,
+  meteo_data$humidity_avg
 )
 
-# Pre-allocate the space for lm_forecast
+# Pre-allocate the space for ar_forecast
 full_set$ar_forecast <- NA
 full_set$ar_low_80 <- NA
 full_set$ar_low_95 <- NA
@@ -100,7 +108,7 @@ full_set$ar_high_80 <- NA
 full_set$ar_high_95 <- NA
 
 for (t in 100:(nrow(full_set) - 1)) {
-  xreg_t <- as.matrix(reg_v[t, , drop = FALSE])
+  xreg_t <- as.matrix(reg_f[t, , drop = FALSE])
   pred <- forecast(ar_model, h = 1, xreg = xreg_t)
 
   full_set$ar_forecast[t] <- pred$mean[1]
@@ -140,7 +148,7 @@ full_set$lm_high_80 <- NA
 full_set$lm_high_95 <- NA
 
 for (t in 100:(nrow(full_set) - 1)) {
-  xreg_t <- as.data.frame(reg_v[t, , drop = FALSE])
+  xreg_t <- as.data.frame(reg_f[t, , drop = FALSE])
 
   pred <- forecast(lm_model, h = 1, newdata = xreg_t)
 
