@@ -209,14 +209,14 @@ find_value_one_week_prior <- function(date, data) {
 # Loop through the range of outlier dates and replace the values
 for (date in outlier_dates) {
   index_one_week_prior <- find_value_one_week_prior(date, aeso.nw)
-  if (!is.na(index_one_week_prior)) {
+  if (any(!is.na(index_one_week_prior))) { # Check if any index is not NA
     # Replace the value at the outlier index with the value from one week prior
-    aeso.nw$Northwest[which(aeso.nw$DT_MST == date)] <- aeso.nw$Northwest[index_one_week_prior]
+    # Since index_one_week_prior can be a vector, you might want to specify which value to use if there are multiple
+    aeso.nw$Northwest[which(aeso.nw$DT_MST == date)] <- aeso.nw$Northwest[index_one_week_prior[1]] # Using the first match
   } else {
     warning(paste("No matching date one week prior for", date))
   }
 }
-
 
 # Plot the data
 plot(aeso.nw$DT_MST, aeso.nw$Northwest,
