@@ -392,4 +392,7 @@ legend("bottom", legend = c("Historical Load", "Fitted", "Forecast"), col = c("b
 
 
 # ----- Durbin-Watson Test -----
-# dwtest(lm_model)
+library(lmtest)
+
+dwtest(lm_model)
+dwtest(ar_model)

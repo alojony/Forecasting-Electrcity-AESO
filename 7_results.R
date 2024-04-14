@@ -463,3 +463,9 @@ install.packages("rjson")
 library(rjson)
 json_str <- toJSON(accuracy_measures)
 write(json_str, file = "accuracy_measures.json")
+
+
+# ----- Diebold-Mariano -----
+# Diebold-Mariano Test
+# Function to calculate the Diebold-Mariano test
+dm.test(validation_set$arima2_1_1_forecast, validation_set$arima3_0_0_forecast, h = 1, alternative = "two.sided")
