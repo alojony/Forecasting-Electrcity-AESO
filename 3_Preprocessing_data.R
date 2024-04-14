@@ -476,3 +476,24 @@ summary(meteo_data)
 
 head(daily.max)
 head(meteo_data)
+
+full_set <- cbind(full_set,meteo_data)
+
+# Suppose 'fullset' is your data frame
+current_columns <- names(full_set)
+northwest_position <- which(current_columns == "Northwest")
+load_position <- which(current_columns == "load")
+new_order <- 1:ncol(full_set)
+new_order <- new_order[-load_position]
+new_order <- c(new_order[1:(northwest_position+1)], load_position, new_order[(northwest_position+2):length(new_order)])
+
+
+# Reorder the columns
+full_set <- full_set[, new_order]
+names(full_set)
+
+# Insert 'load' right after 'Northwest'
+new_order <- c(new_order[1:(northwest_position+1)], load_position, new_order[(northwest_position+2):length(new_order)])
+
+
+
