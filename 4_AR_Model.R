@@ -5,7 +5,13 @@ full_set$IsHoliday <- as.numeric(full_set$IsHoliday)
 # full_set$IsSummer <- as.numeric(full_set$season == "Summer")
 # full_set$IsFall <- as.numeric(full_set$season == "Autumn")
 
+full_set$lag_HDD[is.na(full_set$lag_HDD)] <- 0
+full_set$lag2_HDD[is.na(full_set$lag2_HDD)] <- 0
+full_set$lag_CDD[is.na(full_set$lag_CDD)] <- 0
+full_set$lag2_CD[is.na(full_set$lag2_CD)] <- 0
+
 full_set$Month <- format(full_set$DT_MST, "%m")
+full_set$Jan <- as.numeric(full_set$Month == "01")
 full_set$Feb <- as.numeric(full_set$Month == "02")
 full_set$Mar <- as.numeric(full_set$Month == "03")
 full_set$Apr <- as.numeric(full_set$Month == "04")
@@ -23,6 +29,9 @@ validation_end <- as.Date("2017-12-31")
 
 # Subset the data into training, validation, and test sets
 training_set <- subset(full_set, DT_MST <= training_end)
+# Drop the first 100 rows
+training_set <- training_set[-(1:100), ]
+
 test_set <- subset(full_set, DT_MST > validation_end)
 validation_set <-
   subset(full_set, DT_MST > training_end & DT_MST <= validation_end)
@@ -35,18 +44,44 @@ Yt <- timeSeries(training_set$Northwest, training_set$DT_MST)
 
 training_meteo <- subset(meteo_data, date <= training_end)
 
+# # Define column names based on the variables included in reg_t and reg_f
+column_names <- c(
+  "IsHoliday",
+  "IsWeekend",
+  "HDD",
+  "CDD",
+  "HDD_lag1",
+  "CDD_lag1",
+  "HDD_lag2",
+  "CDD_lag2",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+  "noisy_wind_chill",
+  "noisy_humidity_avg",
+  "noisy_temp"
+)
+
 # External regressors for training
 reg_t <- cbind(
   training_set$IsHoliday,
   training_set$IsWeekend,
   training_set$HDD,
   training_set$CDD,
-  training_set$HDD_lag1,
-  training_set$CDD_lag1,
-  training_set$HDD_lag2,
-  training_set$CDD_lag2,
+  training_set$lag_HDD, #5
+  training_set$lag_CDD,
+  training_set$lag2_HDD,
+  training_set$lag2_CDD,
   training_set$Feb,
-  training_set$Mar,
+  training_set$Mar, #10
   training_set$Apr,
   training_set$May,
   training_set$Jun,
@@ -56,10 +91,22 @@ reg_t <- cbind(
   training_set$Oct,
   training_set$Nov,
   training_set$Dec,
-  training_meteo$wind_chill,
-  training_meteo$avg_temp,
-  training_meteo$humidity_avg
+  training_set$noisy_wind_chill,
+  training_set$noisy_humidity_avg,
+  training_set$noisy_temp #22
 )
+
+# Assign column names to reg_t
+colnames(reg_t) <- column_names
+
+# pdf("output.pdf")
+# # Check correlations among regressors
+# print(cor(reg_t))
+# # Calculate VIF to identify multicollinearity
+# library(car)
+# vif_results <- vif(lm(Yt ~ ., data = as.data.frame(reg_t)))
+# print(vif_results)
+
 
 
 # Fit the AR model on the training set
@@ -80,12 +127,12 @@ reg_f <- cbind(
   full_set$IsWeekend,
   full_set$HDD,
   full_set$CDD,
-  full_set$HDD_lag1,
-  full_set$CDD_lag1,
-  full_set$HDD_lag2,
-  full_set$CDD_lag2,
+  full_set$lag_HDD,
+  full_set$lag_CDD,
+  full_set$lag2_HDD,
+  full_set$lag2_CDD,
   full_set$Feb,
-  full_set$Mar,
+  full_set$Mar,#10
   full_set$Apr,
   full_set$May,
   full_set$Jun,
@@ -95,10 +142,13 @@ reg_f <- cbind(
   full_set$Oct,
   full_set$Nov,
   full_set$Dec,
-  meteo_data$wind_chill,
-  meteo_data$avg_temp,
-  meteo_data$humidity_avg
+  full_set$noisy_wind_chill,#20
+  full_set$noisy_humidity_avg,
+  full_set$noisy_temp
 )
+
+# Assign column names to reg_f
+colnames(reg_f) <- column_names
 
 # Pre-allocate the space for ar_forecast
 full_set$ar_forecast <- NA
@@ -266,7 +316,7 @@ for (forecast_type in c("ar_forecast", "lm_forecast")) {
 print(results)
 
 
-#----AR-X-----
+#---- AR-X -----
 # Will do it here to try to keep a single script
 
 training_set$DT_MST <- as.Date(training_set$DT_MST)
@@ -338,3 +388,6 @@ lines(future_dates, forecasts$mean, col = 'green')
 # Adding a legend
 legend("bottom", legend=c("Historical Load", "Fitted", "Forecast"), col=c("blue", "red", "green"), lty=1, cex=0.8)
 
+
+# ----- Durbin-Watson Test -----
+# dwtest(lm_model)

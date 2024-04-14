@@ -36,5 +36,5 @@ for (t in 100:(nrow(full_set) - 1)) {
 # ----- Diebold-Mariano -----
 # Diebold-Mariano Test
 # Function to calculate the Diebold-Mariano test
-dm_result <- dm.test(full_set$ar_forecast, full_set$arima_forecast, h = 1, alternative = "two.sided")
+# dm_result <- dm.test(full_set$ar_forecast, full_set$arima_forecast, h = 1, alternative = "two.sided")
 
