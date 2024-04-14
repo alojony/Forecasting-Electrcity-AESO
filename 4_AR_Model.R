@@ -76,12 +76,12 @@ reg_t <- cbind(
   training_set$IsWeekend,
   training_set$HDD,
   training_set$CDD,
-  training_set$lag_HDD, #5
+  training_set$lag_HDD, # 5
   training_set$lag_CDD,
   training_set$lag2_HDD,
   training_set$lag2_CDD,
   training_set$Feb,
-  training_set$Mar, #10
+  training_set$Mar, # 10
   training_set$Apr,
   training_set$May,
   training_set$Jun,
@@ -93,7 +93,7 @@ reg_t <- cbind(
   training_set$Dec,
   training_set$noisy_wind_chill,
   training_set$noisy_humidity_avg,
-  training_set$noisy_temp #22
+  training_set$noisy_temp # 22
 )
 
 # Assign column names to reg_t
@@ -132,7 +132,7 @@ reg_f <- cbind(
   full_set$lag2_HDD,
   full_set$lag2_CDD,
   full_set$Feb,
-  full_set$Mar,#10
+  full_set$Mar, # 10
   full_set$Apr,
   full_set$May,
   full_set$Jun,
@@ -142,7 +142,7 @@ reg_f <- cbind(
   full_set$Oct,
   full_set$Nov,
   full_set$Dec,
-  full_set$noisy_wind_chill,#20
+  full_set$noisy_wind_chill, # 20
   full_set$noisy_humidity_avg,
   full_set$noisy_temp
 )
@@ -322,12 +322,12 @@ print(results)
 training_set$DT_MST <- as.Date(training_set$DT_MST)
 # Combine exogenous variables into a matrix
 exog_data <- cbind(
-  IsHoliday = training_set$IsHoliday,  
-  IsWeekend = training_set$IsWeekend, 
-  avg_temp = training_set$noisy_temp, 
-  wind_chill = training_set$noisy_wind_chill, 
-  humidity_avg = training_set$noisy_humidity_avg, 
-  CDD = training_set$CDD, 
+  IsHoliday = training_set$IsHoliday,
+  IsWeekend = training_set$IsWeekend,
+  avg_temp = training_set$noisy_temp,
+  wind_chill = training_set$noisy_wind_chill,
+  humidity_avg = training_set$noisy_humidity_avg,
+  CDD = training_set$CDD,
   HDD = training_set$HDD
 )
 
@@ -371,22 +371,24 @@ plot_dates <- training_set$DT_MST[1:length(forecasts$fitted)]
 par(mfrow = c(1, 1))
 
 # Plot the historical data
-plot(plot_dates, training_set$load[1:length(forecasts$fitted)], type = 'l', col = 'blue', 
-     xlab = "Time", ylab = "Load", main = "Forecast with Historical Data",
-     xaxt = 'n')  # Hide the default x-axis
+plot(plot_dates, training_set$load[1:length(forecasts$fitted)],
+  type = "l", col = "blue",
+  xlab = "Time", ylab = "Load", main = "Forecast with Historical Data",
+  xaxt = "n"
+) # Hide the default x-axis
 
 # Add dates to the x-axis
-axis.Date(1, at = seq(min(plot_dates), max(plot_dates), by = "months"), format = "%Y-%m")  # Adjust 'by' as needed
+axis.Date(1, at = seq(min(plot_dates), max(plot_dates), by = "months"), format = "%Y-%m") # Adjust 'by' as needed
 
 # Adding fitted lines
-lines(plot_dates, forecasts$fitted, col = 'red')
+lines(plot_dates, forecasts$fitted, col = "red")
 # Calculate future dates based on the training data's last date
 future_dates <- seq(from = max(training_set$DT_MST), by = "day", length.out = length(forecasts$mean))
 
 # Add forecast mean to the plot (adjust color or line type as needed)
-lines(future_dates, forecasts$mean, col = 'green')
+lines(future_dates, forecasts$mean, col = "green")
 # Adding a legend
-legend("bottom", legend=c("Historical Load", "Fitted", "Forecast"), col=c("blue", "red", "green"), lty=1, cex=0.8)
+legend("bottom", legend = c("Historical Load", "Fitted", "Forecast"), col = c("blue", "red", "green"), lty = 1, cex = 0.8)
 
 
 # ----- Durbin-Watson Test -----

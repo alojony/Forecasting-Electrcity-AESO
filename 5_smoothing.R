@@ -150,7 +150,6 @@ for (t in 1:nrow(full_set)) {
 }
 
 
-
 # ETS model
 
 ets_model <- ets(ts(training_set$Northwest, frequency = 7), allow.multiplicative.trend = T)

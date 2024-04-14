@@ -1,4 +1,3 @@
-
 ## --- Functions -----
 
 fill_NAs_with_nearest_averages <- function(data) {
@@ -8,13 +7,13 @@ fill_NAs_with_nearest_averages <- function(data) {
       # Find the nearest non-NA values before and after the NA
       before <- data[1:i]
       after <- data[i:n]
-      
+
       nearest_before <- tail(before[!is.na(before)], 1)
       nearest_after <- head(after[!is.na(after)], 1)
-      
+
       # If both neighbors are NA, this will remain NA
       if (length(nearest_before) == 0 | length(nearest_after) == 0) next
-      
+
       # Calculate the average of the nearest non-NA neighbors
       data[i] <- mean(c(nearest_before, nearest_after), na.rm = TRUE)
     }
@@ -27,10 +26,10 @@ fill_NAs_with_nearest_averages <- function(data) {
 find_value_one_week_prior <- function(date, data) {
   # Subtract 7 days from the given date
   target_date <- date - 7 * 24 * 60 * 60 # One week prior
-  
+
   # Find the Northwest value for the target_date
   index <- which(data$DT_MST == target_date)
-  
+
   # If an index is found, return it, otherwise return NA
   if (length(index) > 0) {
     return(index)
@@ -75,10 +74,10 @@ mintik <- min(aeso.nw$Northwest)
 maxtik <- max(aeso.nw$Northwest)
 # Plot the data
 plot(aeso.nw$DT_MST, aeso.nw$Northwest,
-     type = "l",
-     main = "Electricity Load Values for Northwest Alberta",
-     xlab = "Date", ylab = "Electricity Load (MW)",
-     xaxt = "n" # Turn off the default x-axis
+  type = "l",
+  main = "Electricity Load Values for Northwest Alberta",
+  xlab = "Date", ylab = "Electricity Load (MW)",
+  xaxt = "n" # Turn off the default x-axis
 )
 
 # Define the range of years in your data
@@ -86,30 +85,35 @@ start_year <- format(min(aeso.nw$DT_MST), "%Y")
 end_year <- format(max(aeso.nw$DT_MST), "%Y")
 
 # Create a sequence of dates for each year from start to end
-years <- seq(as.POSIXct(paste(start_year, "-01-01", sep="")), 
-             as.POSIXct(paste(end_year, "-01-01", sep="")), 
-             by="years")
+years <- seq(as.POSIXct(paste(start_year, "-01-01", sep = "")),
+  as.POSIXct(paste(end_year, "-01-01", sep = "")),
+  by = "years"
+)
 
 # Add the x-axis with one tick for each year
-axis.POSIXct(1, at=years, format="%Y")
+axis.POSIXct(1, at = years, format = "%Y")
 
 # Define arrays for the start and end dates of each outlier period
-outlier_start_dates <- as.POSIXct(c("2011-05-15 00:00:00", "2014-01-14 00:00:00", 
-                                    "2015-05-04 22:00:00", "2015-05-30 12:00:00", 
-                                    "2015-08-08 00:00:00", "2015-09-12 00:00:00", 
-                                    "2015-09-29 00:00:00", "2018-10-17 00:00:00", 
-                                    "2019-02-03 12:00:00", "2019-05-11 12:00:00"), tz = timezone)
-outlier_end_dates <- as.POSIXct(c("2011-05-22 00:00:00", "2014-01-21 00:00:00", 
-                                  "2015-05-08 00:00:00", "2015-05-31 00:00:00", 
-                                  "2015-08-14 00:00:00", "2015-09-14 23:59:00", 
-                                  "2015-10-03 00:00:00", "2018-10-18 00:00:00", 
-                                  "2019-02-10 12:00:00", "2019-05-18 00:00:00"), tz = timezone)
+outlier_start_dates <- as.POSIXct(c(
+  "2011-05-15 00:00:00", "2014-01-14 00:00:00",
+  "2015-05-04 22:00:00", "2015-05-30 12:00:00",
+  "2015-08-08 00:00:00", "2015-09-12 00:00:00",
+  "2015-09-29 00:00:00", "2018-10-17 00:00:00",
+  "2019-02-03 12:00:00", "2019-05-11 12:00:00"
+), tz = timezone)
+outlier_end_dates <- as.POSIXct(c(
+  "2011-05-22 00:00:00", "2014-01-21 00:00:00",
+  "2015-05-08 00:00:00", "2015-05-31 00:00:00",
+  "2015-08-14 00:00:00", "2015-09-14 23:59:00",
+  "2015-10-03 00:00:00", "2018-10-18 00:00:00",
+  "2019-02-10 12:00:00", "2019-05-18 00:00:00"
+), tz = timezone)
 
 # Loop through each set of start and end dates
 for (i in seq_along(outlier_start_dates)) {
   # Create a sequence of dates at hourly intervals between the start and end dates for each period
   outlier_dates <- seq(from = outlier_start_dates[i], to = outlier_end_dates[i], by = "hour")
-  
+
   # Loop through the range of outlier dates and replace the values
   for (date in outlier_dates) {
     index_one_week_prior <- find_value_one_week_prior(date, aeso.nw)
@@ -123,16 +127,16 @@ for (i in seq_along(outlier_start_dates)) {
 }
 
 
-################3
+################ 3
 
 # Plot the data
 plot(aeso.nw$DT_MST, aeso.nw$Northwest,
-     type = "l",
-     main = "Electricity Load Values for Northwest Alberta
+  type = "l",
+  main = "Electricity Load Values for Northwest Alberta
      (after Outlier Treatment)",
-     xlab = "Date", ylab = "Electricity Load (MW)",
-     ylim = c(mintik, maxtik), # Set the y-axis limits
-     xaxt = "n" # Turn off the default x-axis
+  xlab = "Date", ylab = "Electricity Load (MW)",
+  ylim = c(mintik, maxtik), # Set the y-axis limits
+  xaxt = "n" # Turn off the default x-axis
 )
 
 # Define the range of years in your data
@@ -140,12 +144,13 @@ start_year <- format(min(aeso.nw$DT_MST), "%Y")
 end_year <- format(max(aeso.nw$DT_MST), "%Y")
 
 # Create a sequence of dates for each year from start to end
-years <- seq(as.POSIXct(paste(start_year, "-01-01", sep="")), 
-             as.POSIXct(paste(end_year, "-01-01", sep="")), 
-             by="years")
+years <- seq(as.POSIXct(paste(start_year, "-01-01", sep = "")),
+  as.POSIXct(paste(end_year, "-01-01", sep = "")),
+  by = "years"
+)
 
 # Add the x-axis with one tick for each year
-axis.POSIXct(1, at=years, format="%Y")
+axis.POSIXct(1, at = years, format = "%Y")
 
 # Aggregate to find the daily maximum for the 'Northwest' measurement
 aeso.nw$Date <- as.Date(aeso.nw$DT_MST)
@@ -185,15 +190,15 @@ full_set$SeasonHoliday <-
   interaction(full_set$IsHoliday, full_set$season, drop = TRUE, sep = "-")
 
 # Create the boxplot
-#par(mfrow = c(3, 2))
-#boxplot(Northwest ~ SeasonHoliday,
+# par(mfrow = c(3, 2))
+# boxplot(Northwest ~ SeasonHoliday,
 #  data = full_set,
 #  xlab = "Holiday - season",
 #  ylab = "Load in MW",
 #  main = "Load in MW during Holidays by Month",
 #  las = 2,
 #  cex.axis = 0.8
-#)
+# )
 
 full_set$Weekday <- weekdays(full_set$DT_MST)
 full_set$IsWeekend <-
@@ -226,4 +231,3 @@ for (region in regions) {
 
 daily_max_df$Total <- rowSums(daily_max_df[regions], na.rm = TRUE)
 full_set$Total <- daily_max_df$Total
-
