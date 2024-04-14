@@ -39,34 +39,35 @@ fill_NAs_with_nearest_averages <- function(data) {
 add_noise <- function(column, data_frame) {
   # Calculate the range of the column
   value_range <- max(data_frame[[column]], na.rm = TRUE) - min(data_frame[[column]], na.rm = TRUE)
-  
+
   # Calculate the average error based on the range
   avg_error <- (0.02 * value_range)^2
-  
+
   # Generate noise
   noise <- rnorm(n = length(data_frame[[column]]), mean = 0, sd = sqrt(avg_error))
-  
+
   # Add noise to the original column values
   data_frame[[paste0("noisy_", column)]] <- data_frame[[column]] + noise
-  
+
   return(data_frame)
 }
 
 
 
-### 
+###
 
 # Function to calculate wind chill using the Canadian wind chill index formula
 calculate_wind_chill <- function(temperature, wind_speed) {
   # Convert wind speed from meters per second to kilometers per hour if necessary
   # wind_speed_kmh <- wind_speed * 3.6
-  
+
   # Apply the Canadian wind chill formula
   wind_chill <- ifelse(temperature <= 10 & wind_speed > 4.8,
-                       13.12 + 0.6215 * temperature - 11.37 * (wind_speed^0.16) + 
-                         0.3965 * temperature * (wind_speed^0.16),
-                       temperature) # If conditions not met, wind chill equals the air temperature
-  
+    13.12 + 0.6215 * temperature - 11.37 * (wind_speed^0.16) +
+      0.3965 * temperature * (wind_speed^0.16),
+    temperature
+  ) # If conditions not met, wind chill equals the air temperature
+
   return(wind_chill)
 }
 
@@ -81,7 +82,7 @@ library(forecast)
 
 #---- Temperature and Weather Data -----
 
-# Temperature Data extracted from: 
+# Temperature Data extracted from:
 # https://acis.alberta.ca/acis/township-data-viewer.jsp
 # The 9 main townships that AESO designates as the Northwestern area of Alberta
 
@@ -164,43 +165,52 @@ legend("topright",
   col = c("blue", "red"), lty = 1
 )
 
-# Windchill Variable 
-meteo_data$wind_chill <- mapply(calculate_wind_chill, 
-                                meteo_data$avg_temp, 
-                                meteo_data$wind_speed)
+# Windchill Variable
+meteo_data$wind_chill <- mapply(
+  calculate_wind_chill,
+  meteo_data$avg_temp,
+  meteo_data$wind_speed
+)
 
 # Apply the function to each column except 'date' and 'avg_temp'
 columns_to_noise <- setdiff(names(meteo_data), c("Date", "avg_temp", "township"))
 
-for(column in columns_to_noise) {
+for (column in columns_to_noise) {
   meteo_data <- add_noise(column, meteo_data)
 }
 
 ## Noise for other Variables
-meteo_data <- aggregate(. ~ Date, data = meteo_data, 
-                        FUN = mean, na.action = na.pass)
+meteo_data <- aggregate(. ~ Date,
+  data = meteo_data,
+  FUN = mean, na.action = na.pass
+)
 
 # Check the updated dataset
 head(meteo_data)
 
-## Plots for noisy variables 
+## Plots for noisy variables
 for (column in columns_to_noise) {
   # Define the original and noisy column names
   original_column <- column
   noisy_column <- paste0("noisy_", column)
-  
+
   # Create a plot with the original data
-  plot(meteo_data$Date, meteo_data[[original_column]], type = 'l', 
-       main = paste("Original vs. Noisy", column), xlab = "Date", 
-       ylab = column, col = "blue", lwd = 2)
-  
+  plot(meteo_data$Date, meteo_data[[original_column]],
+    type = "l",
+    main = paste("Original vs. Noisy", column), xlab = "Date",
+    ylab = column, col = "blue", lwd = 2
+  )
+
   # Add the noisy data to the plot
-  lines(meteo_data$Date, meteo_data[[noisy_column]], 
-        type = 'l', col = "red", lwd = 2)
-  
+  lines(meteo_data$Date, meteo_data[[noisy_column]],
+    type = "l", col = "red", lwd = 2
+  )
+
   # Add a legend to distinguish between original and noisy data
-  legend("topright", legend = c("Original", "Noisy"),
-         col = c("blue", "red"), lty = 1, cex = 0.8)
+  legend("topright",
+    legend = c("Original", "Noisy"),
+    col = c("blue", "red"), lty = 1, cex = 0.8
+  )
 }
 
 
@@ -233,7 +243,7 @@ lines(meteo_data$Date,
   col = "blue"
 )
 
-#daily.max$date <- as.Date(daily.max$DT_MST)
+# daily.max$date <- as.Date(daily.max$DT_MST)
 head(meteo_data)
 mergedData <- merge(daily.max, meteo_data, by = "Date")
 cleanData <- na.omit(mergedData)
@@ -339,8 +349,10 @@ cor_matrix
 high_corr_threshold <- 0.7
 
 # Find pairs of variables (excluding 'load') with correlation above the threshold
-high_corr_pairs <- which(abs(cor_matrix[-ncol(cor_matrix),
-                      -ncol(cor_matrix)]) > high_corr_threshold, arr.ind = TRUE)
+high_corr_pairs <- which(abs(cor_matrix[
+  -ncol(cor_matrix),
+  -ncol(cor_matrix)
+]) > high_corr_threshold, arr.ind = TRUE)
 
 # Since 'which' with 'arr.ind=TRUE' returns matrix indices, convert these to variable names
 high_corr_var_pairs <- names(numeric_vars)[-ncol(numeric_vars)][unique(as.vector(high_corr_pairs))]
@@ -352,7 +364,7 @@ summary(meteo_data)
 head(daily.max)
 head(meteo_data)
 
-full_set <- cbind(full_set,meteo_data)
+full_set <- cbind(full_set, meteo_data)
 
 # Suppose 'fullset' is your data frame
 current_columns <- names(full_set)
@@ -360,7 +372,7 @@ northwest_position <- which(current_columns == "Northwest")
 load_position <- which(current_columns == "load")
 new_order <- 1:ncol(full_set)
 new_order <- new_order[-load_position]
-new_order <- c(new_order[1:(northwest_position+1)], load_position, new_order[(northwest_position+2):length(new_order)])
+new_order <- c(new_order[1:(northwest_position + 1)], load_position, new_order[(northwest_position + 2):length(new_order)])
 
 
 # Reorder the columns
@@ -368,7 +380,4 @@ full_set <- full_set[, new_order]
 names(full_set)
 
 # Insert 'load' right after 'Northwest'
-new_order <- c(new_order[1:(northwest_position+1)], load_position, new_order[(northwest_position+2):length(new_order)])
-
-
-
+new_order <- c(new_order[1:(northwest_position + 1)], load_position, new_order[(northwest_position + 2):length(new_order)])
