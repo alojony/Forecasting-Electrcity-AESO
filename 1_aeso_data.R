@@ -1,145 +1,123 @@
+
+## --- Functions -----
+
+fill_NAs_with_nearest_averages <- function(data) {
+  n <- length(data)
+  for (i in 1:n) {
+    if (is.na(data[i])) {
+      # Find the nearest non-NA values before and after the NA
+      before <- data[1:i]
+      after <- data[i:n]
+      
+      nearest_before <- tail(before[!is.na(before)], 1)
+      nearest_after <- head(after[!is.na(after)], 1)
+      
+      # If both neighbors are NA, this will remain NA
+      if (length(nearest_before) == 0 | length(nearest_after) == 0) next
+      
+      # Calculate the average of the nearest non-NA neighbors
+      data[i] <- mean(c(nearest_before, nearest_after), na.rm = TRUE)
+    }
+  }
+  return(data)
+}
+
+###
+# Function to find the value from one week prior
+find_value_one_week_prior <- function(date, data) {
+  # Subtract 7 days from the given date
+  target_date <- date - 7 * 24 * 60 * 60 # One week prior
+  
+  # Find the Northwest value for the target_date
+  index <- which(data$DT_MST == target_date)
+  
+  # If an index is found, return it, otherwise return NA
+  if (length(index) > 0) {
+    return(index)
+  } else {
+    return(NA) # Return NA if no matching date is found
+  }
+}
+
+
+
+
+## Libraries and Config ##########
+
+# Locale to ENG
+Sys.setlocale("LC_TIME", "C")
+# Load Libraries
 library(timeSeries)
 library(astsa)
 library(forecast)
 
-# -----Load and parse data-----
-
+#--- Load Data and Treat Outliers ----
+# Load data
 load("./data/aeso.RData")
-aeso <- aeso[!is.na(aeso$Northwest), ]
-dates <- as.Date(aeso$DT_MST)
 
-aeso.nw <- ts(aeso$Northwest, start = c(2011, 1), frequency = 8760)
-# hourly data for every year since 2011
-# ----- Correct for Missing Values ----
+# Extract just the northwest
+aeso.nw <- aeso[, c("DT_MST", "Northwest")]
+summary(aeso.nw)
+which(is.na(aeso.nw))
+# Drop the NA Dates
+aeso.nw <- aeso.nw[!is.na(aeso.nw$Northwest), ]
+which(is.na(aeso.nw))
 
-NAtoNeighborAverage <- function(x) {
-  n <- length(x)
-  if (n <= 2) {
-    return("not enough data to interpolate")
-  }
+timezone <- "America/Edmonton"
+# Convert the DT_MST column to POSIXct with the correct timezone
+aeso.nw$DT_MST <- as.POSIXct(aeso.nw$DT_MST, tz = timezone, format = "%Y-%m-%d %H:%M:%S")
 
-  for (i in 2:(n - 1)) {
-    if (is.na(x[i])) {
-      prev_val <- x[i - 1]
-      next_val <- x[i + 1]
+# Define arrays for the start and end dates of each outlier period
+outlier_start_dates <- as.POSIXct(c("2011-05-15 00:00:00", "2014-01-14 00:00:00", 
+                                    "2015-05-04 22:00:00", "2015-05-30 12:00:00", 
+                                    "2015-08-08 00:00:00", "2015-09-12 00:00:00", 
+                                    "2015-09-29 00:00:00", "2018-10-17 00:00:00", 
+                                    "2019-02-03 12:00:00", "2019-05-11 12:00:00"), tz = timezone)
+outlier_end_dates <- as.POSIXct(c("2011-05-22 00:00:00", "2014-01-21 00:00:00", 
+                                  "2015-05-08 00:00:00", "2015-05-31 00:00:00", 
+                                  "2015-08-14 00:00:00", "2015-09-14 23:59:00", 
+                                  "2015-10-03 00:00:00", "2018-10-18 00:00:00", 
+                                  "2019-02-10 12:00:00", "2019-05-18 00:00:00"), tz = timezone)
 
-      # If both neighbors are not NaN, calculate the average; otherwise, use the non-NaN neighbor.
-      if (!is.na(prev_val) && !is.na(next_val)) {
-        x[i] <- mean(c(prev_val, next_val))
-      } else if (!is.na(prev_val)) {
-        x[i] <- prev_val
-      } else if (!is.na(next_val)) {
-        x[i] <- next_val
-      }
-      # Note: If both neighbors are NaN, this doesn't change the current NaN value.
+# Loop through each set of start and end dates
+for (i in seq_along(outlier_start_dates)) {
+  # Create a sequence of dates at hourly intervals between the start and end dates for each period
+  outlier_dates <- seq(from = outlier_start_dates[i], to = outlier_end_dates[i], by = "hour")
+  
+  # Loop through the range of outlier dates and replace the values
+  for (date in outlier_dates) {
+    index_one_week_prior <- find_value_one_week_prior(date, aeso.nw)
+    if (!is.na(index_one_week_prior)) { # Check if index is not NA
+      # Replace the value at the outlier index with the value from one week prior
+      aeso.nw$Northwest[which(aeso.nw$DT_MST == date)] <- aeso.nw$Northwest[index_one_week_prior]
+    } else {
+      warning(paste("No matching date one week prior for", date))
     }
   }
-
-  # Handle first and last elements if they are NaN, by simple forward or backward fill
-  if (is.na(x[1])) x[1] <- x[min(which(!is.na(x)))] # Forward fill
-  if (is.na(x[n])) x[n] <- x[max(which(!is.na(x)))] # Backward fill
-
-  return("Interpolated")
 }
 
 
+################3
 
-
-
-# ----- Correct for outliers ----
-
-original_data <- aeso.nw
-
-# Detecting outliers
-outliers_indices <- which(abs(aeso.nw - mean(aeso.nw, na.rm = TRUE))
-> 3 * sd(aeso.nw, na.rm = TRUE))
-
-# Replacing outliers with median
-aeso.nw[outliers_indices] <- median(aeso.nw, na.rm = TRUE)
-
-# Constants
-season_length <- 2160
-num_seasons <- length(aeso.nw) / season_length
-
-# Create a copy of the original data to modify
-nol_aeso.nw <- aeso.nw
-
-# Loop through each season
-for (i in 1:num_seasons) {
-  # Define the start and end indices of the current season
-  start_idx <- (i - 1) * season_length + 1
-  end_idx <- min(i * season_length, length(aeso.nw))
-
-  # Extract the current season's data
-  season_data <- aeso.nw[start_idx:end_idx]
-
-  # Compute median and SD, ignoring NAs
-  season_median <- median(season_data, na.rm = TRUE)
-  season_sd <- sd(season_data, na.rm = TRUE)
-
-  # Detect outliers: more than 3 SDs from the median
-  outliers_indices <- which(abs(season_data - season_median) > 3.5 * season_sd)
-
-  # Replace outliers with the season's median
-  season_data[outliers_indices] <- season_median
-
-  # Update the time series with the cleaned season data
-  nol_aeso.nw[start_idx:end_idx] <- season_data
-}
-par(mfrow = c(2, 1))
-
-length(nol_aeso.nw)
-
-# -----  Aggregate daily peak load ----
-ts_data <- as.ts(nol_aeso.nw, start = c(2011, 1), frequency = 24)
-
-
-if (is.ts(ts_data)) {
-  # Convert to a more generic format for the date conversion
-  start_year <- start(ts_data)[1]
-  start_month <- start(ts_data)[2]
-  frequency_per_year <- frequency(ts_data)
-  # For hourly data,
-  date_values <- seq(
-    from = as.POSIXct(paste(start_year,
-      start_month,
-      "01", "00", "00",
-      sep = "-"
-    )),
-    length.out = length(ts_data),
-    by = "hour"
-  )
-  date_values <- as.Date(date_values) # Convert POSIXct to Date for daily aggregation
-}
-
-# Create a data frame for manipulation
-data_df <- data.frame(date = date_values, value = as.vector(ts_data)) # Convert ts_data to vector
-
-data_df$year <- format(data_df$date, "%Y")
-data_df$day_of_year <- as.integer(format(data_df$date, "%j"))
-length(data_df$day_of_year)
-# Aggregate to find the daily max for each year and day
-daily <- aggregate(value ~ year + day_of_year, data = data_df, FUN = max)
-daily$date <- as.Date(paste0(daily$year, "-", daily$day_of_year), format = "%Y-%j")
-daily_max <- daily[, c("date", "value")]
-daily_max$date <- as.Date(daily_max$date)
-daily_max <- daily_max[order(daily_max$date), ]
-daily_max
-# convert it back to a timeSeries object:
-daily_max_ts <- timeSeries(data = daily_max$value, time = daily_max$date)
-# Create a full set object to collect all variables
-start_date <- as.Date("2011-01-01") # Adjust based on your actual data start date
-end_date <- start_date + length(daily_max) - 1 # Ensuring alignment with 'daily_max' length
-full_dates <- seq.Date(min(daily_max$date),
-  max(daily_max$date),
-  by = "day"
+# Plot the data
+plot(aeso.nw$DT_MST, aeso.nw$Northwest,
+     type = "l",
+     main = "Northwest Values After Replacing Outliers",
+     xlab = "Date", ylab = "Northwest"
 )
 
-# Now, create the 'full_set' data frame
-full_set <- data.frame(DT_MST = full_dates)
+# Aggregate to find the daily maximum for the 'Northwest' measurement
+aeso.nw$Date <- as.Date(aeso.nw$DT_MST)
+daily.max <- aggregate(Northwest ~ Date, data = aeso.nw, max)
+daily.max <- subset(daily.max, Date <= as.Date("2019-12-31"))
+head(daily.max)
 
-full_set$DT_MST <- as.Date(daily_max$date)
-full_set$Northwest <- as.numeric(daily_max_ts)
+
+# Now, create the 'full_set' data frame
+full_set <- data.frame(
+  DT_MST = as.Date(daily.max$Date),
+  Northwest = as.numeric(daily.max$Northwest)
+)
 
 head(full_set)
 
@@ -207,3 +185,4 @@ for (region in regions) {
 
 daily_max_df$Total <- rowSums(daily_max_df[regions], na.rm = TRUE)
 full_set$Total <- daily_max_df$Total
+
