@@ -63,9 +63,31 @@ which(is.na(aeso.nw))
 aeso.nw <- aeso.nw[!is.na(aeso.nw$Northwest), ]
 which(is.na(aeso.nw))
 
+
 timezone <- "America/Edmonton"
 # Convert the DT_MST column to POSIXct with the correct timezone
 aeso.nw$DT_MST <- as.POSIXct(aeso.nw$DT_MST, tz = timezone, format = "%Y-%m-%d %H:%M:%S")
+mintik <- min(aeso.nw$Northwest)
+maxtik <- max(aeso.nw$Northwest)
+# Plot the data
+plot(aeso.nw$DT_MST, aeso.nw$Northwest,
+     type = "l",
+     main = "Electricity Load Values for Northwest Alberta",
+     xlab = "Date", ylab = "Electricity Load (MW)",
+     xaxt = "n" # Turn off the default x-axis
+)
+
+# Define the range of years in your data
+start_year <- format(min(aeso.nw$DT_MST), "%Y")
+end_year <- format(max(aeso.nw$DT_MST), "%Y")
+
+# Create a sequence of dates for each year from start to end
+years <- seq(as.POSIXct(paste(start_year, "-01-01", sep="")), 
+             as.POSIXct(paste(end_year, "-01-01", sep="")), 
+             by="years")
+
+# Add the x-axis with one tick for each year
+axis.POSIXct(1, at=years, format="%Y")
 
 # Define arrays for the start and end dates of each outlier period
 outlier_start_dates <- as.POSIXct(c("2011-05-15 00:00:00", "2014-01-14 00:00:00", 
@@ -102,9 +124,24 @@ for (i in seq_along(outlier_start_dates)) {
 # Plot the data
 plot(aeso.nw$DT_MST, aeso.nw$Northwest,
      type = "l",
-     main = "Northwest Values After Replacing Outliers",
-     xlab = "Date", ylab = "Northwest"
+     main = "Electricity Load Values for Northwest Alberta
+     (after Outlier Treatment)",
+     xlab = "Date", ylab = "Electricity Load (MW)",
+     ylim = c(mintik, maxtik), # Set the y-axis limits
+     xaxt = "n" # Turn off the default x-axis
 )
+
+# Define the range of years in your data
+start_year <- format(min(aeso.nw$DT_MST), "%Y")
+end_year <- format(max(aeso.nw$DT_MST), "%Y")
+
+# Create a sequence of dates for each year from start to end
+years <- seq(as.POSIXct(paste(start_year, "-01-01", sep="")), 
+             as.POSIXct(paste(end_year, "-01-01", sep="")), 
+             by="years")
+
+# Add the x-axis with one tick for each year
+axis.POSIXct(1, at=years, format="%Y")
 
 # Aggregate to find the daily maximum for the 'Northwest' measurement
 aeso.nw$Date <- as.Date(aeso.nw$DT_MST)
