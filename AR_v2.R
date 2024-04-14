@@ -44,16 +44,42 @@ Yt <- timeSeries(training_set$Northwest, training_set$DT_MST)
 
 training_meteo <- subset(meteo_data, date <= training_end)
 
+# # Define column names based on the variables included in reg_t and reg_f
+column_names <- c(
+  "IsHoliday",
+  "IsWeekend",
+  "HDD",
+  "CDD",
+  "HDD_lag1",
+  "CDD_lag1",
+  "HDD_lag2",
+  "CDD_lag2",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+  "noisy_wind_chill",
+  "noisy_humidity_avg",
+  "noisy_temp"
+)
+
 # External regressors for training
 reg_t <- cbind(
   training_set$IsHoliday,
   training_set$IsWeekend,
   training_set$HDD,
   training_set$CDD,
-  training_set$HDD_lag1, #5
-  training_set$CDD_lag1,
-  training_set$HDD_lag2,
-  training_set$CDD_lag2,
+  training_set$lag_HDD, #5
+  training_set$lag_CDD,
+  training_set$lag2_HDD,
+  training_set$lag2_CDD,
   training_set$Feb,
   training_set$Mar, #10
   training_set$Apr,
@@ -65,10 +91,13 @@ reg_t <- cbind(
   training_set$Oct,
   training_set$Nov,
   training_set$Dec,
-  training_set$wind_chill, #20
-  #training_set$avg_temp,
-  training_set$humidity_avg #22
+  training_set$noisy_wind_chill,
+  training_set$noisy_humidity_avg,
+  training_set$noisy_temp #22
 )
+
+# Assign column names to reg_t
+colnames(reg_t) <- column_names
 
 # Fit the AR model on the training set
 ar_model <-
@@ -88,10 +117,10 @@ reg_f <- cbind(
   full_set$IsWeekend,
   full_set$HDD,
   full_set$CDD,
-  full_set$HDD_lag1,
-  full_set$CDD_lag1,
-  full_set$HDD_lag2,
-  full_set$CDD_lag2,
+  full_set$lag_HDD,
+  full_set$lag_CDD,
+  full_set$lag2_HDD,
+  full_set$lag2_CDD,
   full_set$Feb,
   full_set$Mar,#10
   full_set$Apr,
@@ -103,10 +132,15 @@ reg_f <- cbind(
   full_set$Oct,
   full_set$Nov,
   full_set$Dec,
-  full_set$wind_chill,#20
-  #full_set$avg_temp,
-  full_set$humidity_avg
+  full_set$noisy_wind_chill,#20
+  full_set$noisy_humidity_avg,
+  full_set$noisy_temp
+
 )
+
+# Assign column names to reg_f
+colnames(reg_f) <- column_names
+
 
 # Pre-allocate the space for ar_forecast
 full_set$ar_forecast <- NA
