@@ -67,6 +67,10 @@ which(is.na(aeso.nw))
 timezone <- "America/Edmonton"
 # Convert the DT_MST column to POSIXct with the correct timezone
 aeso.nw$DT_MST <- as.POSIXct(aeso.nw$DT_MST, tz = timezone, format = "%Y-%m-%d %H:%M:%S")
+
+# Drop the 9 entries with NA values after conversion
+aeso.nw <- aeso.nw[!is.na(aeso.nw$DT_MST), ]
+
 mintik <- min(aeso.nw$Northwest)
 maxtik <- max(aeso.nw$Northwest)
 # Plot the data
