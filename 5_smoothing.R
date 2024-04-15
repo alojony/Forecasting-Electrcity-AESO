@@ -154,6 +154,12 @@ for (t in 1:nrow(full_set)) {
 
 ets_model <- ets(ts(training_set$Northwest, frequency = 7), allow.multiplicative.trend = T)
 
+full_set$ets_forecast <- NA
+full_set$ets_low_80 <- NA
+full_set$ets_high_80 <- NA
+full_set$ets_low_95 <- NA
+full_set$ets_high_95 <- NA
+
 for (t in 1:nrow(full_set)) {
   ets_model <- ets(ts(full_set[1:(t - 1), "Northwest"], frequency = 7), model = "ANA")
   forecastt <- forecast(ets_model, h = 1)

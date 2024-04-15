@@ -168,7 +168,7 @@ full_set$ar_high_80 <- NA
 full_set$ar_high_95 <- NA
 
 for (t in 100:(nrow(full_set) - 1)) {
-  xreg_t <- as.matrix(reg_f[t, , drop = FALSE])
+  xreg_t <- as.matrix(reg_f[(t-1), , drop = FALSE])
   pred <- forecast(ar_model, h = 1, xreg = xreg_t)
 
   full_set$ar_forecast[t] <- pred$mean[1]
@@ -208,7 +208,7 @@ full_set$lm_high_80 <- NA
 full_set$lm_high_95 <- NA
 
 for (t in 100:(nrow(full_set) - 1)) {
-  xreg_t <- as.data.frame(reg_f[t, , drop = FALSE])
+  xreg_t <- as.data.frame(reg_f[(t-1), , drop = FALSE])
 
   pred <- forecast(lm_model, h = 1, newdata = xreg_t)
 
@@ -251,8 +251,6 @@ legend(
   col = c("blue", "red"),
   lty = 1
 )
-
-
 
 
 #----ARX-----
@@ -317,7 +315,7 @@ full_set$arx_high_80 <- NA
 full_set$arx_high_95 <- NA
 
 for (t in 100:(nrow(full_set) - 1)) {
-  xreg_t <- as.data.frame(full_df.tmp[t, , drop = FALSE])
+  xreg_t <- as.data.frame(full_df.tmp[(t-1), , drop = FALSE])
   pred <- forecast(arx_model, h = 1, newdata = xreg_t)
 
   full_set$arx_forecast[t] <- pred$mean[1]
