@@ -8,7 +8,7 @@ full_set$IsHoliday <- as.numeric(full_set$IsHoliday)
 full_set$lag_HDD[is.na(full_set$lag_HDD)] <- 0
 full_set$lag2_HDD[is.na(full_set$lag2_HDD)] <- 0
 full_set$lag_CDD[is.na(full_set$lag_CDD)] <- 0
-full_set$lag2_CD[is.na(full_set$lag2_CD)] <- 0
+full_set$lag2_CDD[is.na(full_set$lag2_CDD)] <- 0
 
 full_set$Month <- format(full_set$DT_MST, "%m")
 full_set$Jan <- as.numeric(full_set$Month == "01")
@@ -149,6 +149,10 @@ reg_f <- cbind(
 
 # Assign column names to reg_f
 colnames(reg_f) <- column_names
+#col_index <- which(colnames(reg_f) == "lag2_CDD")
+
+# Replace NaN values in that column
+#reg_f[is.nan(reg_f[, col_index]), col_index] <- 0
 
 # Pre-allocate the space for ar_forecast
 full_set$ar_forecast <- NA
@@ -209,7 +213,7 @@ for (t in 100:(nrow(full_set) - 1)) {
   full_set$lm_high_95[t] <- pred$upper[2]
 }
 
-
+par(mfrow = c(1, 1))
 plot(
   validation_set$DT_MST,
   validation_set$Northwest,
@@ -220,7 +224,7 @@ plot(
 )
 lines(validation_set$DT_MST, validation_set$ar_forecast, col = "red")
 legend(
-  "topleft",
+  "bottom",
   legend = c("Actual", "AR-Forecast"),
   col = c("blue", "red"),
   lty = 1
@@ -320,47 +324,16 @@ print(results)
 # Will do it here to try to keep a single script
 
 training_set$DT_MST <- as.Date(training_set$DT_MST)
-# Combine exogenous variables into a matrix
-exog_data <- cbind(
-  IsHoliday = training_set$IsHoliday,
-  IsWeekend = training_set$IsWeekend,
-  avg_temp = training_set$noisy_temp,
-  wind_chill = training_set$noisy_wind_chill,
-  humidity_avg = training_set$noisy_humidity_avg,
-  CDD = training_set$CDD,
-  HDD = training_set$HDD
-)
 
 
 
 # Fit an AR(1) model with the extended set of exogenous variables
-load_model <- Arima(training_set$load, order = c(1, 0, 0), xreg = exog_data)
-summary(load_model)
-checkresiduals(load_model)
-
-# Example future exogenous data
-future_data <- data.frame(
-  IsHoliday = sample(training_set$IsHoliday, 10, replace = TRUE),
-  IsWeekend = sample(training_set$IsWeekend, 10, replace = TRUE),
-  avg_temp = rnorm(10, mean = mean(training_set$noisy_temp), sd = sd(training_set$noisy_temp)),
-  wind_chill = rnorm(10, mean = mean(training_set$noisy_wind_chill), sd = sd(training_set$noisy_wind_chill)),
-  humidity_avg = rnorm(10, mean = mean(training_set$noisy_humidity_avg), sd = sd(training_set$noisy_humidity_avg)),
-  CDD = rnorm(10, mean = mean(training_set$CDD), sd = sd(training_set$CDD)),
-  HDD = rnorm(10, mean = mean(training_set$HDD), sd = sd(training_set$HDD))
-)
-
-future_data[] <- lapply(future_data, function(x) as.numeric(as.character(x)))
-str(future_data)
-# Convert the data frame to a numeric matrix
-future_exog_matrix <- as.matrix(future_data)
-
-# Verify that the matrix is numeric
-str(future_exog_matrix)
-
-
+arx_model <- Arima(training_set$load, order = c(1, 0, 0), xreg = reg_t)
+summary(arx_model)
+checkresiduals(arx_model)
 
 # Now forecast using the numeric matrix
-forecasts <- forecast(load_model, xreg = future_exog_matrix)
+forecasts <- forecast(arx_model, xreg = reg_f)
 
 # Convert to Date format if it's not already
 par(mfrow = c(1, 1))
@@ -395,4 +368,13 @@ legend("bottom", legend = c("Historical Load", "Fitted", "Forecast"), col = c("b
 library(lmtest)
 
 dwtest(lm_model)
-dwtest(ar_model)
+
+# Example of fitting a linear model on residuals if it makes sense contextually
+lm_res <- lm(residuals_ar ~ seq_along(residuals_ar))
+
+# Apply dwtest to this linear model
+dw_result <- dwtest(lm_res)
+
+# Print results
+print(summary(dw_result))
+print(dw_result)
