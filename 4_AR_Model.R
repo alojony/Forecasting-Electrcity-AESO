@@ -257,7 +257,7 @@ legend(
 
 #----ARX-----
 # Create a temporary dataframe for fitting the model (similar to df.tmp)
-df.tmp <- data.frame(
+train_df.tmp <- data.frame(
   y = training_set$Northwest,
   lag1y = training_set$lag1_Northwest,
   IsHoliday = training_set$IsHoliday,
@@ -279,31 +279,53 @@ df.tmp <- data.frame(
   noisy_temp = training_set$noisy_temp
 )
 
+full_df.tmp <- data.frame(
+  y = full_set$Northwest,
+  lag1y = full_set$lag1_Northwest,
+  IsHoliday = full_set$IsHoliday,
+  HDD = full_set$HDD,
+  CDD = full_set$CDD,
+  Feb = full_set$Feb,
+  Mar = full_set$Mar,
+  Apr = full_set$Apr,
+  May = full_set$May,
+  Jun = full_set$Jun,
+  Jul = full_set$Jul,
+  Aug = full_set$Aug,
+  Sep = full_set$Sep,
+  Oct = full_set$Oct,
+  Nov = full_set$Nov,
+  Dec = full_set$Dec,
+  noisy_wind_chill = full_set$noisy_wind_chill,
+  noisy_humidity_avg = full_set$noisy_humidity_avg,
+  noisy_temp = full_set$noisy_temp
+)
+
 # Fitting the linear model
-arx_model <- lm(y ~ ., data=df.tmp)
-print(summary(arx_model))
+# arx_model <- lm(y ~ ., data=train_df.tmp)
+# print(summary(arx_model))
 
 # If you want to use dynlm, you can use the following code
-# install.packages("dynlm") 
-# library(dynlm)
-# arx_model <- dynlm(y ~ ., data=df.tmp, model=T)
+install.packages("dynlm") 
+library(dynlm)
+arx_model <- dynlm(y ~ ., data=train_df.tmp)
 
-# full_set$arx_forecast <- NA
-# full_set$arx_low_80 <- NA
-# full_set$arx_low_95 <- NA
-# full_set$arx_high_80 <- NA
-# full_set$arx_high_95 <- NA
+full_set$arx_forecast <- NA
+full_set$arx_low_80 <- NA
+full_set$arx_low_95 <- NA
+full_set$arx_high_80 <- NA
+full_set$arx_high_95 <- NA
 
-# for (t in 100:(nrow(full_set) - 1)) {
-#   xreg_t <- as.matrix(reg_f[t, , drop = FALSE])
-#   pred <- forecast(arx_model, h = 1, newdata = xreg_t)
+for (t in 100:(nrow(full_set) - 1)) {
+  xreg_t <- as.data.frame(full_df.tmp[t, , drop = FALSE])
+  pred <- forecast(arx_model, h = 1, newdata = xreg_t)
 
-#   full_set$arx_forecast[t] <- pred$mean[1]
-#   full_set$arx_low_80[t] <- pred$lower[1]
-#   full_set$arx_low_95[t] <- pred$lower[2]
-#   full_set$arx_high_80[t] <- pred$upper[1]
-#   full_set$arx_high_95[t] <- pred$upper[2]
-# }
+  full_set$arx_forecast[t] <- pred$mean[1]
+  full_set$arx_low_80[t] <- pred$lower[1]
+  full_set$arx_low_95[t] <- pred$lower[2]
+  full_set$arx_high_80[t] <- pred$upper[1]
+  full_set$arx_high_95[t] <- pred$upper[2]
+}
 
 
 par(mfrow=c(2,2))

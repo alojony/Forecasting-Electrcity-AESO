@@ -190,6 +190,21 @@ for (s in unique(full_set$season)) {
         )
     )
 
+    accuracy_measures[["arx"]][[s]] <- list(
+        mape = mape(seasonal_subset$arx_forecast, seasonal_subset$Northwest),
+        pct_bias = pct_bias(seasonal_subset$arx_forecast, seasonal_subset$Northwest),
+        coverage_80 = pct_interval_coverage(
+            seasonal_subset$arx_low_80,
+            seasonal_subset$arx_high_80,
+            seasonal_subset$Northwest
+        ),
+        coverage_95 = pct_interval_coverage(
+            seasonal_subset$arx_low_95,
+            seasonal_subset$arx_high_95,
+            seasonal_subset$Northwest
+        )
+    )
+
     accuracy_measures[["arima1_1_2"]][[s]] <- list(
         mape = mape(seasonal_subset$arima1_1_2_forecast, seasonal_subset$Northwest),
         pct_bias = pct_bias(seasonal_subset$arima1_1_2_forecast, seasonal_subset$Northwest),
@@ -390,6 +405,21 @@ accuracy_measures[["lm"]][["year"]] <- list(
     coverage_95 = pct_interval_coverage(
         validation_set$lm_low_95,
         validation_set$lm_high_95,
+        validation_set$Northwest
+    )
+)
+
+accuracy_measures[["arx"]][["year"]] <- list(
+    mape = mape(validation_set$arx_forecast, validation_set$Northwest),
+    pct_bias = pct_bias(validation_set$arx_forecast, validation_set$Northwest),
+    coverage_80 = pct_interval_coverage(
+        validation_set$arx_low_80,
+        validation_set$arx_high_80,
+        validation_set$Northwest
+    ),
+    coverage_95 = pct_interval_coverage(
+        validation_set$arx_low_95,
+        validation_set$arx_high_95,
         validation_set$Northwest
     )
 )
