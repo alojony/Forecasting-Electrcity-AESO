@@ -24,6 +24,12 @@ full_set$Oct <- as.numeric(full_set$Month == "10")
 full_set$Nov <- as.numeric(full_set$Month == "11")
 full_set$Dec <- as.numeric(full_set$Month == "12")
 
+# Prepare the data for arx
+full_set$IsHoliday <- as.numeric(full_set$IsHoliday)
+full_set$lag1_Northwest <- c(NA, full_set$Northwest[-length(full_set$Northwest)])  # Create lagged NW data
+full_set <- na.omit(full_set)  # Remove NAs that were introduced by lagging
+
+
 training_end <- as.Date("2015-12-31")
 validation_end <- as.Date("2017-12-31")
 
@@ -247,6 +253,74 @@ legend(
 )
 
 
+
+
+#----ARX-----
+# Create a temporary dataframe for fitting the model (similar to df.tmp)
+df.tmp <- data.frame(
+  y = training_set$Northwest,
+  lag1y = training_set$lag1_Northwest,
+  IsHoliday = training_set$IsHoliday,
+  HDD = training_set$HDD,
+  CDD = training_set$CDD,
+  Feb = training_set$Feb,
+  Mar = training_set$Mar,
+  Apr = training_set$Apr,
+  May = training_set$May,
+  Jun = training_set$Jun,
+  Jul = training_set$Jul,
+  Aug = training_set$Aug,
+  Sep = training_set$Sep,
+  Oct = training_set$Oct,
+  Nov = training_set$Nov,
+  Dec = training_set$Dec,
+  noisy_wind_chill = training_set$noisy_wind_chill,
+  noisy_humidity_avg = training_set$noisy_humidity_avg,
+  noisy_temp = training_set$noisy_temp
+)
+
+# Fitting the linear model
+arx_model <- lm(y ~ ., data=df.tmp)
+print(summary(arx_model))
+
+par(mfrow=c(2,2))
+plot(arx_model)
+
+# Preparing new data for forecasting
+# Preparing new data for forecasting using the same column structure as df.tmp
+new_data <- data.frame(
+  lag1y = validation_set$lag1_Northwest,
+  IsHoliday = validation_set$IsHoliday,
+  HDD = validation_set$HDD,
+  CDD = validation_set$CDD,
+  Feb = validation_set$Feb,
+  Mar = validation_set$Mar,
+  Apr = validation_set$Apr,
+  May = validation_set$May,
+  Jun = validation_set$Jun,
+  Jul = validation_set$Jul,
+  Aug = validation_set$Aug,
+  Sep = validation_set$Sep,
+  Oct = validation_set$Oct,
+  Nov = validation_set$Nov,
+  Dec = validation_set$Dec,
+  noisy_wind_chill = validation_set$noisy_wind_chill,
+  noisy_humidity_avg = validation_set$noisy_humidity_avg,
+  noisy_temp = validation_set$noisy_temp
+)
+
+
+# Forecast using the model
+validation_set$forecast <- predict(arx_model, newdata=new_data, interval="prediction")
+
+
+par(mfrow=c(1,1))
+plot(validation_set$DT_MST, validation_set$Northwest, type='l', col='blue', 
+     main="Forecast vs Actual", xlab="Date", ylab="Northwest")
+lines(validation_set$DT_MST, validation_set$forecast[, "fit"], col='red')
+legend("bottom", legend=c("Actual", "Forecast"), col=c("blue", "red"), lty=1)
+
+# ----- Measures -----
 # Residuals from ar
 residuals_ar <- residuals(ar_model)
 acf(residuals_ar, main = "ACF of Residuals")
@@ -256,6 +330,11 @@ pacf(residuals_ar, main = "PACF of Residuals")
 residuals_lm <- residuals(lm_model)
 acf(residuals_lm, main = "ACF of Residuals")
 pacf(residuals_lm, main = "PACF of Residuals")
+
+# Residuals from arx
+residuals_arx <- residuals(arx_model)
+acf(residuals_arx, main = "ACF of Residuals")
+pacf(residuals_arx, main = "PACF of Residuals")
 
 
 # Define the MAPE and %BIAS functions
@@ -279,13 +358,13 @@ results <- data.frame(
 # Loop through each season and calculate MAPE and %BIAS for AR and LM forecasts
 seasons <- unique(validation_set$season)
 for (season in seasons) {
-  for (forecast_type in c("ar_forecast", "lm_forecast")) {
+  for (forecast_type in c("ar_forecast", "lm_forecast, arx_forecast")) {
     subset_data <- validation_set[validation_set$season == season, ]
     mape_value <-
       mape(subset_data$Northwest, subset_data[[forecast_type]])
     pct_bias_value <-
       pct_bias(subset_data$Northwest, subset_data[[forecast_type]])
-
+    
     results <- rbind(
       results,
       data.frame(
@@ -299,12 +378,12 @@ for (season in seasons) {
 }
 
 # Calculate total MAPE and %BIAS for the entire validation set
-for (forecast_type in c("ar_forecast", "lm_forecast")) {
+for (forecast_type in c("ar_forecast", "lm_forecast, arx_forecast")) {
   mape_value <-
     mape(validation_set$Northwest, validation_set[[forecast_type]])
   pct_bias_value <-
     pct_bias(validation_set$Northwest, validation_set[[forecast_type]])
-
+  
   results <- rbind(
     results,
     data.frame(
@@ -320,61 +399,38 @@ for (forecast_type in c("ar_forecast", "lm_forecast")) {
 print(results)
 
 
-#---- AR-X -----
-# Will do it here to try to keep a single script
-
-training_set$DT_MST <- as.Date(training_set$DT_MST)
-
-
-
-# Fit an AR(1) model with the extended set of exogenous variables
-arx_model <- Arima(training_set$load, order = c(1, 0, 0), xreg = reg_t)
-summary(arx_model)
-checkresiduals(arx_model)
-
-# Now forecast using the numeric matrix
-forecasts <- forecast(arx_model, xreg = reg_f)
-
-# Convert to Date format if it's not already
-par(mfrow = c(1, 1))
-#####
-plot_dates <- training_set$DT_MST[1:length(forecasts$fitted)]
-
-# Reset plotting layout
-par(mfrow = c(1, 1))
-
-# Plot the historical data
-plot(plot_dates, training_set$load[1:length(forecasts$fitted)],
-  type = "l", col = "blue",
-  xlab = "Time", ylab = "Load", main = "Forecast with Historical Data",
-  xaxt = "n"
-) # Hide the default x-axis
-
-# Add dates to the x-axis
-axis.Date(1, at = seq(min(plot_dates), max(plot_dates), by = "months"), format = "%Y-%m") # Adjust 'by' as needed
-
-# Adding fitted lines
-lines(plot_dates, forecasts$fitted, col = "red")
-# Calculate future dates based on the training data's last date
-future_dates <- seq(from = max(training_set$DT_MST), by = "day", length.out = length(forecasts$mean))
-
-# Add forecast mean to the plot (adjust color or line type as needed)
-lines(future_dates, forecasts$mean, col = "green")
-# Adding a legend
-legend("bottom", legend = c("Historical Load", "Fitted", "Forecast"), col = c("blue", "red", "green"), lty = 1, cex = 0.8)
-
-
 # ----- Durbin-Watson Test -----
 library(lmtest)
+# Directly use lm_model's residuals
+residuals_lm <- residuals(lm_model)
 
-dwtest(lm_model)
+# Fit a linear model on LM residuals
+lm_res_lm <- lm(residuals_lm ~ seq_along(residuals_lm))
 
-# Example of fitting a linear model on residuals if it makes sense contextually
-lm_res <- lm(residuals_ar ~ seq_along(residuals_ar))
+# Durbin-Watson test on LM residuals
+dw_result_lm <- dwtest(lm_res_lm)
+print(dw_result_lm)
 
-# Apply dwtest to this linear model
-dw_result <- dwtest(lm_res)
 
-# Print results
-print(summary(dw_result))
-print(dw_result)
+# Assuming ar_model is an instance of Arima or similar
+residuals_ar <- residuals(ar_model)
+
+# Fit a linear model on residuals to apply the Durbin-Watson test
+lm_res_ar <- lm(residuals_ar ~ seq_along(residuals_ar))
+
+# Durbin-Watson test on AR model residuals
+dw_result_ar <- dwtest(lm_res_ar)
+print(dw_result_ar)
+
+# Assuming arx_model is handled similarly and residuals are calculated
+residuals_arx <- residuals(arx_model)  # Assuming arx_lm_model is your ARX model fitted with lm()
+
+# Fit a linear model on ARX model residuals
+lm_res_arx <- lm(residuals_arx ~ seq_along(residuals_arx))
+
+# Durbin-Watson test on ARX model residuals
+dw_result_arx <- dwtest(lm_res_arx)
+print(dw_result_arx)
+
+
+
