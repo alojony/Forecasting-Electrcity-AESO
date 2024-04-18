@@ -264,6 +264,36 @@ for (s in unique(full_set$season)) {
             seasonal_subset$Northwest
         )
     )
+
+    accuracy_measures[["arima1_0_2"]][[s]] <- list(
+        mape = mape(seasonal_subset$arima1_0_2_forecast, seasonal_subset$Northwest),
+        pct_bias = pct_bias(seasonal_subset$arima1_0_2_forecast, seasonal_subset$Northwest),
+        coverage_80 = pct_interval_coverage(
+            seasonal_subset$arima1_0_2_low_80,
+            seasonal_subset$arima1_0_2_high_80,
+            seasonal_subset$Northwest
+        ),
+        coverage_95 = pct_interval_coverage(
+            seasonal_subset$arima1_0_2_low_95,
+            seasonal_subset$arima1_0_2_high_95,
+            seasonal_subset$Northwest
+        )
+    )
+
+    accuracy_measures[["sarima212_001"]][[s]] <- list(
+        mape = mape(seasonal_subset$sarima_forecast, seasonal_subset$Northwest),
+        pct_bias = pct_bias(seasonal_subset$sarima_forecast, seasonal_subset$Northwest),
+        coverage_80 = pct_interval_coverage(
+            seasonal_subset$sarima_low_80,
+            seasonal_subset$sarima_high_80,
+            seasonal_subset$Northwest
+        ),
+        coverage_95 = pct_interval_coverage(
+            seasonal_subset$sarima_low_95,
+            seasonal_subset$sarima_high_95,
+            seasonal_subset$Northwest
+        )
+    )
 }
 
 accuracy_measures[["naive"]][["year"]] <- list(
@@ -484,6 +514,35 @@ accuracy_measures[["arima3_0_0"]][["year"]] <- list(
     )
 )
 
+accuracy_measures[["arima1_0_2"]][["year"]] <- list(
+        mape = mape(validation_set$arima1_0_2_forecast, validation_set$Northwest),
+        pct_bias = pct_bias(validation_set$arima1_0_2_forecast, validation_set$Northwest),
+        coverage_80 = pct_interval_coverage(
+            validation_set$arima1_0_2_low_80,
+            validation_set$arima1_0_2_high_80,
+            validation_set$Northwest
+        ),
+        coverage_95 = pct_interval_coverage(
+            validation_set$arima1_0_2_low_95,
+            validation_set$arima1_0_2_high_95,
+            validation_set$Northwest
+        )
+)
+
+accuracy_measures[["sarima212_001"]][["year"]] <- list(
+    mape = mape(validation_set$arima1_0_2_forecast, validation_set$Northwest),
+    pct_bias = pct_bias(validation_set$arima1_0_2_forecast, validation_set$Northwest),
+    coverage_80 = pct_interval_coverage(
+        validation_set$arima1_0_2_low_80,
+        validation_set$arima1_0_2_high_80,
+        validation_set$Northwest
+    ),
+    coverage_95 = pct_interval_coverage(
+        validation_set$arima1_0_2_low_95,
+        validation_set$arima1_0_2_high_95,
+        validation_set$Northwest
+    )
+)
 
 
 
@@ -498,4 +557,4 @@ write(json_str, file = "accuracy_measures.json")
 # ----- Diebold-Mariano -----
 # Diebold-Mariano Test
 # Function to calculate the Diebold-Mariano test
-dm.test(validation_set$arima2_1_1_forecast, validation_set$arima3_0_0_forecast, h = 1, alternative = "two.sided")
+dm.test(validation_set$arima1_1_2_forecast, validation_set$arima2_0_2_forecast, h = 1, alternative = "two.sided")

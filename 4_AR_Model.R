@@ -1,9 +1,9 @@
 # dummies
 full_set$IsHoliday <- as.numeric(full_set$IsHoliday)
-# full_set$IsWinter <- as.numeric(full_set$season == "Winter")
-# full_set$IsSpring <- as.numeric(full_set$season == "Spring")
-# full_set$IsSummer <- as.numeric(full_set$season == "Summer")
-# full_set$IsFall <- as.numeric(full_set$season == "Autumn")
+full_set$IsWinter <- as.numeric(full_set$season == "Winter")
+full_set$IsSpring <- as.numeric(full_set$season == "Spring")
+full_set$IsSummer <- as.numeric(full_set$season == "Summer")
+full_set$IsFall <- as.numeric(full_set$season == "Autumn")
 
 full_set$lag_HDD[is.na(full_set$lag_HDD)] <- 0
 full_set$lag2_HDD[is.na(full_set$lag2_HDD)] <- 0
@@ -43,37 +43,16 @@ validation_set <-
   subset(full_set, DT_MST > training_end & DT_MST <= validation_end)
 
 
-# training_set <-
-#   training_set[!is.na(training_set$CDD_lag2) &
-#     !is.na(training_set$HDD_lag2), ]
+
 Yt <- timeSeries(training_set$Northwest, training_set$DT_MST)
 
-training_meteo <- subset(meteo_data, date <= training_end)
 
 # # Define column names based on the variables included in reg_t and reg_f
 column_names <- c(
   "IsHoliday",
   "IsWeekend",
   "HDD",
-  "CDD",
-  "HDD_lag1",
-  "CDD_lag1",
-  "HDD_lag2",
-  "CDD_lag2",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-  "noisy_wind_chill",
-  "noisy_humidity_avg",
-  "noisy_temp"
+  "noisy_humidity_avg"
 )
 
 # External regressors for training
@@ -81,84 +60,19 @@ reg_t <- cbind(
   training_set$IsHoliday,
   training_set$IsWeekend,
   training_set$HDD,
-  training_set$CDD,
-  training_set$lag_HDD, # 5
-  training_set$lag_CDD,
-  training_set$lag2_HDD,
-  training_set$lag2_CDD,
-  training_set$Feb,
-  training_set$Mar, # 10
-  training_set$Apr,
-  training_set$May,
-  training_set$Jun,
-  training_set$Jul,
-  training_set$Aug,
-  training_set$Sep,
-  training_set$Oct,
-  training_set$Nov,
-  training_set$Dec,
-  training_set$noisy_wind_chill,
-  training_set$noisy_humidity_avg,
-  training_set$noisy_temp # 22
+  training_set$noisy_humidity_avg
 )
-
 # Assign column names to reg_t
 colnames(reg_t) <- column_names
-
-# pdf("output.pdf")
-# # Check correlations among regressors
-# print(cor(reg_t))
-# # Calculate VIF to identify multicollinearity
-# library(car)
-# vif_results <- vif(lm(Yt ~ ., data = as.data.frame(reg_t)))
-# print(vif_results)
-
-
-
-# Fit the AR model on the training set
-ar_model <-
-  auto.arima(
-    Yt,
-    xreg = reg_t,
-    d = 0,
-    max.p = 3,
-    max.q = 0,
-    seasonal = FALSE
-  )
-summary(ar_model)
 
 # Prepare the external regressors for the validation set
 reg_f <- cbind(
   full_set$IsHoliday,
   full_set$IsWeekend,
   full_set$HDD,
-  full_set$CDD,
-  full_set$lag_HDD,
-  full_set$lag_CDD,
-  full_set$lag2_HDD,
-  full_set$lag2_CDD,
-  full_set$Feb,
-  full_set$Mar, # 10
-  full_set$Apr,
-  full_set$May,
-  full_set$Jun,
-  full_set$Jul,
-  full_set$Aug,
-  full_set$Sep,
-  full_set$Oct,
-  full_set$Nov,
-  full_set$Dec,
-  full_set$noisy_wind_chill, # 20
-  full_set$noisy_humidity_avg,
-  full_set$noisy_temp
+  full_set$noisy_humidity_avg
 )
-
-# Assign column names to reg_f
 colnames(reg_f) <- column_names
-#col_index <- which(colnames(reg_f) == "lag2_CDD")
-
-# Replace NaN values in that column
-#reg_f[is.nan(reg_f[, col_index]), col_index] <- 0
 
 # Pre-allocate the space for ar_forecast
 full_set$ar_forecast <- NA
@@ -168,8 +82,19 @@ full_set$ar_high_80 <- NA
 full_set$ar_high_95 <- NA
 
 for (t in 100:(nrow(full_set) - 1)) {
-  xreg_t <- as.matrix(reg_f[(t-1), , drop = FALSE])
-  pred <- forecast(ar_model, h = 1, xreg = xreg_t)
+  if (t %% 50 == 0) {
+    print(paste("Processing AR: row", t, "of", nrow(full_set)))
+    ar_model <-
+      auto.arima(
+        Yt[1:(t-1)],
+        xreg = reg_f[1:(t-1), , drop = FALSE],
+        d = 0,
+        max.p = 3,
+        max.q = 0,
+        seasonal = FALSE
+      )
+  }
+  pred <- forecast(ar_model, h = 1, xreg = as.matrix(reg_f[t, , drop = FALSE]))
 
   full_set$ar_forecast[t] <- pred$mean[1]
   full_set$ar_low_80[t] <- pred$lower[1]
@@ -179,27 +104,6 @@ for (t in 100:(nrow(full_set) - 1)) {
 }
 
 
-# Initialize a vector to store forecasts
-# ar_forecasts <- numeric(nrow(validation_set))
-# ar_forecasts <-
-#   predict(ar_model,
-#     n.ahead = nrow(validation_set),
-#     newxreg = reg_v
-#   )$pred
-# validation_set$ar_forecast <- ar_forecasts
-
-
-
-
-# ndata <- data.frame(reg_v)
-# colnames(ndata) <- paste0("V", 1:19)
-# lm_forecasts <- predict(lm_model, newdata = ndata)
-# validation_set$lm_forecast <- lm_forecasts
-
-
-lm_model <- lm(Yt ~ ., data = as.data.frame(reg_t))
-summary(lm_model)
-
 # Pre-allocate the space for lm_forecast
 full_set$lm_forecast <- NA
 full_set$lm_low_80 <- NA
@@ -208,9 +112,12 @@ full_set$lm_high_80 <- NA
 full_set$lm_high_95 <- NA
 
 for (t in 100:(nrow(full_set) - 1)) {
-  xreg_t <- as.data.frame(reg_f[(t-1), , drop = FALSE])
+  if (t %% 50 == 0) {
+    print(paste("Processing LM: row", t, "of", nrow(full_set)))
+    lm_model <- lm(Yt[1:(t - 1)] ~ ., data =  as.data.frame(reg_f[1:(t-1), , drop = FALSE]))
+  }
 
-  pred <- forecast(lm_model, h = 1, newdata = xreg_t)
+  pred <- forecast(lm_model, h = 1, newdata = as.data.frame(reg_f[t, , drop = FALSE]))
 
   full_set$lm_forecast[t] <- pred$mean[1]
   full_set$lm_low_80[t] <- pred$lower[1]
@@ -304,9 +211,8 @@ full_df.tmp <- data.frame(
 # print(summary(arx_model))
 
 # If you want to use dynlm, you can use the following code
-install.packages("dynlm") 
+# install.packages("dynlm") 
 library(dynlm)
-arx_model <- dynlm(y ~ ., data=train_df.tmp)
 
 full_set$arx_forecast <- NA
 full_set$arx_low_80 <- NA
@@ -315,8 +221,12 @@ full_set$arx_high_80 <- NA
 full_set$arx_high_95 <- NA
 
 for (t in 100:(nrow(full_set) - 1)) {
-  xreg_t <- as.data.frame(full_df.tmp[(t-1), , drop = FALSE])
-  pred <- forecast(arx_model, h = 1, newdata = xreg_t)
+  if (t %% 50 == 0) {
+    print(paste("Processing ARx: row", t, "of", nrow(full_set)))
+    arx_model <- dynlm(y ~ ., data=train_df.tmp[1:(t-1), , drop = FALSE])
+  }
+
+  pred <- forecast(arx_model, h = 1, newdata = as.data.frame(full_df.tmp[t, , drop = FALSE]))
 
   full_set$arx_forecast[t] <- pred$mean[1]
   full_set$arx_low_80[t] <- pred$lower[1]
@@ -437,10 +347,6 @@ for (forecast_type in c("ar_forecast", "lm_forecast, arx_forecast")) {
     )
   )
 }
-
-# Print the final results
-print(results)
-
 
 # ----- Durbin-Watson Test -----
 library(lmtest)

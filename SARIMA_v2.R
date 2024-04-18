@@ -55,16 +55,15 @@ arima_model <- auto.arima(training_set$Northwest,
 
 
 
-northwest_ts <- ts(training_set$Northwest, frequency = 90)
+northwest_ts <- ts(training_set$Northwest, frequency = 7)
 sarima_model <- auto.arima(northwest_ts, 
                            xreg = reg_t, 
                            seasonal = TRUE, 
                            start.p = 2, start.q = 2, 
                            start.P = 1, start.Q = 0,
-                           d = 1, D = 0, 
                            max.p = 2, max.q = 2, 
-                           max.P = 1, max.Q = 0,
-                           max.d = 1, max.D = 0)
+                           max.P = 1, max.Q = 2,
+                           max.d = 2, max.D = 2)
 
 
 sarima_auto <- auto.arima(northwest_ts, xreg = reg_t, seasonal = TRUE)
