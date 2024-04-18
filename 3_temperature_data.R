@@ -38,7 +38,9 @@ fill_NAs_with_nearest_averages <- function(data) {
 # Function to add noise to a column in meteo_data
 add_noise <- function(column, data_frame) {
   # Calculate the range of the column
-  value_range <- max(data_frame[[column]], na.rm = TRUE) - min(data_frame[[column]], na.rm = TRUE)
+  value_range <- max(data_frame[[column]], 
+                     na.rm = TRUE) - min(data_frame[[column]], 
+                     na.rm = TRUE)
 
   # Calculate the average error based on the range
   avg_error <- (0.02 * value_range)^2
@@ -218,23 +220,30 @@ for (column in columns_to_noise) {
 
 head(meteo_data)
 
-par(mfrow=c(1,1))
-plot(meteo_data$min_temp, meteo_data$load,
-     main = "Temperature effect on Load",
-     xlab = "Temperature", ylab = "Electricity Load (MW)" , xaxt = 'n' , 
-     xlim = c(-40,30)
-     )
-points(meteo_data$max_temp, meteo_data$load)
-axis(1, at = seq(-40, 40, by = 2), cex.axis = 0.7)
+T_ref <- 10.00
+T_t <- meteo_data$avg_temp
 
-abline(v = 10, col = "red")
-abline(v = 1, col = "red")
+temp.cdd <- max(T_t - T_ref, 0)
+temp.hdd <- max(T_ref - T_t, 0)
+
 
 # Calculate Heating Degree Days (HDD) and Cooling Degree Days (CDD)
-meteo_data$CDD <- pmax(meteo_data$min_temp - 10, 0)
-meteo_data$HDD <- pmax(1 - meteo_data$min_temp, 0)
+meteo_data$HDD <- pmax(T_ref - T_t, 0)
+meteo_data$CDD <- pmax(T_t - T_ref, 0)
 
+# Print the updated data frame
+print(meteo_data)
 
+plot(
+  meteo_data$Date,
+  meteo_data$HDD,
+  type = "l",
+  col = "red"
+)
+lines(meteo_data$Date,
+  meteo_data$CDD,
+  col = "blue"
+)
 
 # daily.max$date <- as.Date(daily.max$DT_MST)
 head(meteo_data)
@@ -255,10 +264,12 @@ meteo_data$lag_CDD <-
   c(NA, meteo_data$CDD[-nrow(meteo_data)])
 
 # Create lag-2 for the HDD column
-meteo_data$lag2_HDD <- c(NA, NA, meteo_data$HDD[-(nrow(meteo_data)):-(nrow(meteo_data) - 1)])
+meteo_data$lag2_HDD <- c(NA, NA, 
+                         meteo_data$HDD[-(nrow(meteo_data)):-(nrow(meteo_data) - 1)])
 
 # Create lag-2 for the CDD column
-meteo_data$lag2_CDD <- c(NA, NA, meteo_data$CDD[-(nrow(meteo_data)):-(nrow(meteo_data) - 1)])
+meteo_data$lag2_CDD <- c(NA, NA, 
+                         meteo_data$CDD[-(nrow(meteo_data)):-(nrow(meteo_data) - 1)])
 
 
 # Convert your data frame columns to time series if they aren't already
@@ -330,7 +341,7 @@ plot(lag2_CDD_ts,
   pch = 1
 )
 
-
+# ----- Merge to Full-Set -----
 full_set <- cbind(full_set, meteo_data)
 
 # Suppose 'fullset' is your data frame
@@ -350,3 +361,15 @@ names(full_set)
 # Insert 'load' right after 'Northwest'
 new_order <- c(new_order[1:(northwest_position + 1)], load_position, 
                new_order[(northwest_position + 2):length(new_order)])
+
+
+# Reset default margins
+par(mar=c(5, 4, 4, 2) + 0.1)
+
+
+summary(meteo_data)
+
+head(daily.max)
+head(meteo_data)
+
+

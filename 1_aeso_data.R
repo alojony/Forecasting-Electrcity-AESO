@@ -80,6 +80,20 @@ plot(aeso.nw$DT_MST, aeso.nw$Northwest,
   xaxt = "n" # Turn off the default x-axis
 )
 
+# Subset the data for January 2011
+jan_2011_data <- subset(aeso.nw, format(DT_MST, "%Y-%m") == "2019-05")
+
+# Plot the subsetted data
+plot(jan_2011_data$DT_MST, jan_2011_data$Northwest,
+     type = "l",
+     main = "Electricity Load Values for Northwest Alberta (January 2011)",
+     xlab = "Date", ylab = "Electricity Load (MW)",
+     xaxt = "n" # Turn off the default x-axis
+)
+
+axis(1, at = jan_2011_data$DT_MST, labels = format(jan_2011_data$DT_MST, "%m-%d"), cex.axis = 0.7)
+
+
 # Define the range of years in your data
 start_year <- format(min(aeso.nw$DT_MST), "%Y")
 end_year <- format(max(aeso.nw$DT_MST), "%Y")
@@ -96,17 +110,29 @@ axis.POSIXct(1, at = years, format = "%Y")
 # Define arrays for the start and end dates of each outlier period
 outlier_start_dates <- as.POSIXct(c(
   "2011-05-15 00:00:00", "2014-01-14 00:00:00",
-  "2015-05-04 22:00:00", "2015-05-30 12:00:00",
-  "2015-08-08 00:00:00", "2015-09-12 00:00:00",
-  "2015-09-29 00:00:00", "2018-10-17 00:00:00",
-  "2019-02-03 12:00:00", "2019-05-11 12:00:00"
+  "2012-01-16 00:00:00", "2012-07-08 00:00:00",
+  "2012-09-15 00:00:00", "2016-06-15 00:00:00", 
+  "2017-06-14 00:00:00", "2017-06-01 00:00:00", 
+  "2017-08-15 00:00:00", "2017-08-11 00:00:00", 
+  "2017-09-30 00:00:00", "2019-06-03 00:00:00", 
+  "2019-06-10 00:00:00", "2015-05-04 22:00:00", 
+  "2015-05-30 12:00:00", "2015-08-08 00:00:00",
+  "2015-09-12 00:00:00", "2015-09-29 00:00:00",
+  "2018-10-17 00:00:00", "2019-02-03 12:00:00", 
+  "2019-05-11 12:00:00", "2019-05-22 00:00:00"
 ), tz = timezone)
 outlier_end_dates <- as.POSIXct(c(
   "2011-05-22 00:00:00", "2014-01-21 00:00:00",
-  "2015-05-08 00:00:00", "2015-05-31 00:00:00",
-  "2015-08-14 00:00:00", "2015-09-14 23:59:00",
-  "2015-10-03 00:00:00", "2018-10-18 00:00:00",
-  "2019-02-10 12:00:00", "2019-05-18 00:00:00"
+  "2012-01-21 00:00:00", "2012-07-13 00:00:00",
+  "2012-09-18 00:00:00", "2016-06-17 00:00:00", 
+  "2017-06-17 00:00:00", "2017-06-07 00:00:00", 
+  "2017-08-17 00:00:00", "2017-08-13 00:00:00", 
+  "2017-10-06 00:00:00", "2019-06-06 00:00:00", 
+  "2019-06-13 00:00:00", "2015-05-08 00:00:00", 
+  "2015-05-31 00:00:00", "2015-08-14 00:00:00", 
+  "2015-09-14 23:59:00", "2015-10-03 00:00:00", 
+  "2018-10-18 00:00:00", "2019-02-10 12:00:00", 
+  "2019-05-18 00:00:00", "2019-05-30 00:00:00 "
 ), tz = timezone)
 
 # Loop through each set of start and end dates
@@ -127,7 +153,6 @@ for (i in seq_along(outlier_start_dates)) {
 }
 
 
-################ 3
 
 # Plot the data
 plot(aeso.nw$DT_MST, aeso.nw$Northwest,
@@ -231,3 +256,6 @@ for (region in regions) {
 
 daily_max_df$Total <- rowSums(daily_max_df[regions], na.rm = TRUE)
 full_set$Total <- daily_max_df$Total
+
+
+
