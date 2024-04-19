@@ -1,3 +1,17 @@
+# ***************************** #
+#    Forecasting Electricity    #
+#    Northwest Alberta.         #
+# --- Smoothing Algorithms----  #
+# Naive Methods                 #
+# Holt, Holt-Winters, ETS       #
+# TBATS, TBATS refitted.        #
+# ---------------------------   #
+#      Jonathan Gonzalez.       #
+#      Ghali Lahlou             #
+#     Xavier Péeladeau-Asselin  #
+#        April 18 2024.         #
+# ***************************** #
+
 Sys.setlocale("LC_TIME", "C")
 library(timeSeries)
 library(astsa)

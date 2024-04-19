@@ -1,6 +1,6 @@
 source("1_aeso_data.R")
 source("2_census_data.R")
-source("3_Preprocessing_data.R")
+source("3_temperature_data.R")
 source("4_AR_Model.R")
 source("5_smoothing.R")
 source("6_ARIMA.R")

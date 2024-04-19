@@ -1,3 +1,18 @@
+# ***************************** #
+#    Forecasting Electricity    #
+#    Northwest Alberta.         #
+# --- Preprocessing Script----  #
+# Outlier treatment             #
+# Temperature & Weather Data    #
+# Noise for Regresors on Temp.  #
+# ---------------------------   #
+#      Jonathan Gonzalez.       #
+#      Ghali Lahlou             #
+#     Xavier Péeladeau-Asselin  #
+#        April 18 2024.         #
+# ***************************** #
+
+
 # dummies
 full_set$IsHoliday <- as.numeric(full_set$IsHoliday)
 full_set$IsWinter <- as.numeric(full_set$season == "Winter")
@@ -276,18 +291,18 @@ legend("bottom", legend=c("Actual", "Forecast"), col=c("blue", "red"), lty=1)
 # ----- Measures -----
 # Residuals from ar
 residuals_ar <- residuals(ar_model)
-acf(residuals_ar, main = "ACF of Residuals")
-pacf(residuals_ar, main = "PACF of Residuals")
+#acf(residuals_ar, main = "ACF of Residuals")
+#pacf(residuals_ar, main = "PACF of Residuals")
 
 # Residuals from lm
 residuals_lm <- residuals(lm_model)
-acf(residuals_lm, main = "ACF of Residuals")
-pacf(residuals_lm, main = "PACF of Residuals")
+#acf(residuals_lm, main = "ACF of Residuals")
+#pacf(residuals_lm, main = "PACF of Residuals")
 
 # Residuals from arx
 residuals_arx <- residuals(arx_model)
-acf(residuals_arx, main = "ACF of Residuals")
-pacf(residuals_arx, main = "PACF of Residuals")
+acf(residuals_arx, main = "ACF of ARX Residuals")
+pacf(residuals_arx, main = "PACF of ARX Residuals")
 
 
 # Define the MAPE and %BIAS functions
@@ -382,4 +397,11 @@ dw_result_arx <- dwtest(lm_res_arx)
 print(dw_result_arx)
 
 
+
+pdf("ARXplots.pdf")
+plot(arx_model)
+
+acf(residuals_arx, main = "ACF of ARX Residuals")
+pacf(residuals_arx, main = "PACF of ARX Residuals")
+dev.off()
 

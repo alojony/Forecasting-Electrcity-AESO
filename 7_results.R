@@ -1,3 +1,18 @@
+# ***************************** #
+#    Forecasting Electricity    #
+#    Northwest Alberta.         #
+# --- Results and Metrics ----  #
+# Calculation and recopilation  #
+# of accuracy measures          #
+# and results                   #
+# ---------------------------   #
+#      Jonathan Gonzalez.       #
+#      Ghali Lahlou             #
+#     Xavier Péeladeau-Asselin  #
+#        April 18 2024.         #
+# ***************************** #
+
+
 get_std_and_mean <- function(x) {
     return(c(mean = mean(x), sd = sd(x), pct_bias = (mean(x) - mean(full_set$Northwest)) / mean(full_set$Northwest) * 100))
 }

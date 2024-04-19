@@ -1,13 +1,15 @@
 # ***************************** #
 #    Forecasting Electricity    #
 #    Northwest Alberta.         #
-# --- Preprocessing Script      #
+#--- Wheater data. Script ------#
 # Outlier treatment             #
 # Temperature & Weather Data    #
 # Noise for Regresors on Temp.  #
 # ---------------------------   #
 #      Jonathan Gonzalez.       #
-#        April 13 2024.         #
+#      Ghali Lahlou             #
+#     Xavier Péeladeau-Asselin  #
+#        April 18 2024.         #
 # ***************************** #
 
 ## --- Functions -----
